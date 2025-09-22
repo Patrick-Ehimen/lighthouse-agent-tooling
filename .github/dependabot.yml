@@ -1,0 +1,18 @@
+version: 2
+updates:
+  - package-ecosystem: "pnpm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "pnpm"
+    directory: "/packages/shared"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "pnpm"
+    directory: "/packages/types"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "pnpm"
+    directory: "/apps/api"
+    schedule:
+      interval: "weekly"
