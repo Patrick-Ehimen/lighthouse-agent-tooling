@@ -1,0 +1,9 @@
+{
+  "name": "@lighthouse-tooling/sdk-wrapper",
+  "version": "0.1.0",
+  "dependencies": {
+    "@lighthouse-tooling/types": "workspace:*",
+    "@lighthouse-tooling/shared": "workspace:*",
+    "@lighthouse-web3/sdk": "^0.2.3"
+  }
+}

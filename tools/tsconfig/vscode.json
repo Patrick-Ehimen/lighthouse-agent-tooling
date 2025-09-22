@@ -1,0 +1,13 @@
+{
+  "extends": "./base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "allowJs": true,
+    "checkJs": false,
+    "jsx": "preserve",
+    "module": "ESNext",
+    "moduleResolution": "Bundler"
+  },
+  "include": ["**/*"],
+  "exclude": ["node_modules", "dist", "build", "coverage"]
+}

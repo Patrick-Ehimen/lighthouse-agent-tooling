@@ -1,0 +1,84 @@
+{
+  "name": "lighthouse-cursor-extension",
+  "displayName": "Lighthouse Storage for Cursor",
+  "description": "AI-native Lighthouse storage integration for Cursor IDE with MCP support",
+  "version": "0.1.0",
+  "publisher": "lighthouse-web3",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other",
+    "Machine Learning",
+    "Data Science"
+  ],
+  "keywords": [
+    "lighthouse",
+    "ipfs",
+    "storage",
+    "ai",
+    "cursor",
+    "mcp",
+    "encryption",
+    "datasets"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "lighthouse.cursor.uploadFile",
+        "title": "Upload File to Lighthouse",
+        "category": "Lighthouse"
+      },
+      {
+        "command": "lighthouse.cursor.createDataset",
+        "title": "Create AI Dataset",
+        "category": "Lighthouse"
+      },
+      {
+        "command": "lighthouse.cursor.connectMCP",
+        "title": "Connect to MCP Server",
+        "category": "Lighthouse"
+      }
+    ],
+    "configuration": {
+      "title": "Lighthouse",
+      "properties": {
+        "lighthouse.cursor.mcpServerUrl": {
+          "type": "string",
+          "default": "http://localhost:3000",
+          "description": "MCP Server URL for AI agent communication"
+        },
+        "lighthouse.cursor.autoStartMCP": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically start MCP server for Cursor AI integration"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p ./",
+    "dev": "tsc -watch -p ./",
+    "package": "vsce package",
+    "lint": "eslint src --ext ts",
+    "test": "npm run compile && node ./out/test/runTest.js"
+  },
+  "dependencies": {
+    "@lighthouse-tooling/shared": "workspace:*",
+    "@lighthouse-tooling/sdk-wrapper": "workspace:*",
+    "@lighthouse-tooling/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.0.0",
+    "vsce": "^2.15.0"
+  }
+}

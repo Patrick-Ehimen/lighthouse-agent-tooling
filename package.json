@@ -1,0 +1,38 @@
+{
+  "name": "lighthouse-agent-tooling",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Lighthouse Agent Tooling – A set of connectors, IDE extensions, and AI-native developer tools to seamlessly integrate Lighthouse into AI-powered workflows. Supports MCP (Model Context Protocol) connectors, Cursor/IDE extensions for pinning and encrypting datasets/models.",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "tools/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "clean": "turbo run clean"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Patrick-Ehimen/lighthouse-agent-tooling.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Patrick-Ehimen/lighthouse-agent-tooling/issues"
+  },
+  "homepage": "https://github.com/Patrick-Ehimen/lighthouse-agent-tooling#readme",
+  "packageManager": "pnpm@8.12.1+sha1.aa961ffce9b6eaa56307d9b5ff7e984f25b7eb58",
+  "devDependencies": {
+    "turbo": "^2.5.6",
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0"
+  }
+}

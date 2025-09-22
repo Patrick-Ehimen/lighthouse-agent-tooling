@@ -1,0 +1,13 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./apps/mcp-server" },
+    { "path": "./apps/docs" },
+    { "path": "./packages/types" },
+    { "path": "./packages/shared" },
+    { "path": "./packages/sdk-wrapper" },
+    { "path": "./packages/vscode-extension" },
+    { "path": "./packages/cursor-extension" },
+    { "path": "./tools/eslint-config" }
+  ]
+}

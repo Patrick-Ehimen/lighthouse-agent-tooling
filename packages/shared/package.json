@@ -1,0 +1,7 @@
+{
+  "name": "@lighthouse-tooling/shared",
+  "version": "0.1.0",
+  "dependencies": {
+    "@lighthouse-tooling/types": "workspace:*"
+  }
+}
