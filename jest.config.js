@@ -2,10 +2,10 @@
 module.exports = {
   preset: "ts-jest",
   testEnvironment: "node",
-  roots: ["<rootDir>/packages", "<rootDir>/apps"],
+  roots: ["<rootDir>/packages/shared", "<rootDir>/apps"],
   testMatch: ["**/__tests__/**/*.ts", "**/?(*.)+(spec|test).ts"],
   collectCoverageFrom: [
-    "packages/*/src/**/*.ts",
+    "packages/shared/src/**/*.ts",
     "apps/*/src/**/*.ts",
     "!**/*.d.ts",
     "!**/node_modules/**",
