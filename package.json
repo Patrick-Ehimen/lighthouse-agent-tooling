@@ -11,9 +11,14 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
-    "lint": "turbo run lint",
+    "lint": "pnpm dlx eslint@9 .",
+    "lint:fix": "pnpm dlx eslint@9 . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "ci:local": "pnpm run lint && pnpm run format:check",
     "test": "turbo run test",
-    "clean": "turbo run clean"
+    "clean": "turbo run clean",
+    "prepare": "husky"
   },
   "repository": {
     "type": "git",
@@ -32,7 +37,18 @@
     "turbo": "^2.5.6",
     "typescript": "^5.0.0",
     "@types/node": "^20.0.0",
-    "eslint": "^8.0.0",
-    "prettier": "^3.0.0"
+    "eslint": "^9.36.0",
+    "prettier": "^3.3.3",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10"
+  },
+  "pnpm": {
+    "overrides": {
+      "eslint": "^9.36.0",
+      "@typescript-eslint/eslint-plugin": "8.44.1",
+      "@typescript-eslint/parser": "8.44.1",
+      "typescript-eslint": "8.36.0",
+      "@eslint/js": "^9.31.0"
+    }
   }
 }

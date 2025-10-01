@@ -5,5 +5,11 @@
     "@lighthouse-tooling/sdk-wrapper": "workspace:*",
     "@lighthouse-tooling/types": "workspace:*",
     "@modelcontextprotocol/sdk": "latest"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   }
 }

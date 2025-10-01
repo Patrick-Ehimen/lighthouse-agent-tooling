@@ -32,9 +32,9 @@ pnpm dev
 
 This project is a monorepo managed by pnpm workspaces. The project is organized as follows:
 
--   `apps/`: Contains the applications, such as the documentation and the main server.
--   `packages/`: Contains the shared packages and libraries used by the applications.
--   `tools/`: Contains the tooling and configuration for the project, such as ESLint and TypeScript configurations.
+- `apps/`: Contains the applications, such as the documentation and the main server.
+- `packages/`: Contains the shared packages and libraries used by the applications.
+- `tools/`: Contains the tooling and configuration for the project, such as ESLint and TypeScript configurations.
 
 ## Commit Message Conventions
 
@@ -52,14 +52,14 @@ Each commit message consists of a **header**, a **body**, and a **footer**. The 
 
 The **type** must be one of the following:
 
--   `feat`: A new feature
--   `fix`: A bug fix
--   `docs`: Documentation only changes
--   `style`: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
--   `refactor`: A code change that neither fixes a bug nor adds a feature
--   `perf`: A code change that improves performance
--   `test`: Adding missing tests or correcting existing tests
--   `chore`: Changes to the build process or auxiliary tools and libraries such as documentation generation
+- `feat`: A new feature
+- `fix`: A bug fix
+- `docs`: Documentation only changes
+- `style`: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
+- `refactor`: A code change that neither fixes a bug nor adds a feature
+- `perf`: A code change that improves performance
+- `test`: Adding missing tests or correcting existing tests
+- `chore`: Changes to the build process or auxiliary tools and libraries such as documentation generation
 
 ## Code Style
 

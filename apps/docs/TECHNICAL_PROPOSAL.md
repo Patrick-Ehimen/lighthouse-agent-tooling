@@ -122,8 +122,7 @@ interface LighthouseMCPServer {
 const LIGHTHOUSE_MCP_TOOLS = [
   {
     name: "lighthouse_upload_file",
-    description:
-      "Upload a file to IPFS via Lighthouse with optional encryption",
+    description: "Upload a file to IPFS via Lighthouse with optional encryption",
     inputSchema: {
       type: "object",
       properties: {
@@ -294,11 +293,7 @@ class LighthouseAISDK {
       });
 
       // Save key shards with access conditions
-      await this.saveEncryptionKeys(
-        uploadResult.Hash,
-        keyShards,
-        accessConditions
-      );
+      await this.saveEncryptionKeys(uploadResult.Hash, keyShards, accessConditions);
 
       return {
         cid: uploadResult.Hash,
@@ -356,14 +351,12 @@ class LighthouseAISDK {
 #### Deliverables:
 
 1. **Lighthouse MCP Server Core**
-
    - Basic MCP protocol implementation
    - Lighthouse SDK integration
    - Authentication management
    - File upload/download tools
 
 2. **Core SDK Wrapper**
-
    - Unified interface for Lighthouse and Kavach SDKs
    - Progress tracking and event emission
    - Error handling and retry logic
@@ -389,7 +382,7 @@ class LighthouseMCPServer extends Server {
           tools: {},
           resources: {},
         },
-      }
+      },
     );
 
     this.setRequestHandler(ListToolsRequestSchema, this.handleListTools);
@@ -402,9 +395,7 @@ class LighthouseMCPServer extends Server {
     };
   }
 
-  private async handleCallTool(
-    request: CallToolRequest
-  ): Promise<CallToolResult> {
+  private async handleCallTool(request: CallToolRequest): Promise<CallToolResult> {
     const { name, arguments: args } = request.params;
 
     switch (name) {
@@ -426,14 +417,12 @@ class LighthouseMCPServer extends Server {
 #### Deliverables:
 
 1. **Enhanced VSCode Extension**
-
    - AI agent command interface
    - Workspace context provider
    - Progress streaming to AI
    - MCP server integration
 
 2. **Cursor IDE Extension**
-
    - Port core functionality to Cursor
    - Cursor-specific UI adaptations
    - AI assistant integration hooks
@@ -468,28 +457,16 @@ export class LighthouseExtension {
 
   private registerAICommands(context: vscode.ExtensionContext) {
     const commands = [
-      vscode.commands.registerCommand(
-        "lighthouse.ai.uploadFile",
-        this.aiUploadFile
-      ),
-      vscode.commands.registerCommand(
-        "lighthouse.ai.createDataset",
-        this.aiCreateDataset
-      ),
-      vscode.commands.registerCommand(
-        "lighthouse.ai.fetchFile",
-        this.aiFetchFile
-      ),
+      vscode.commands.registerCommand("lighthouse.ai.uploadFile", this.aiUploadFile),
+      vscode.commands.registerCommand("lighthouse.ai.createDataset", this.aiCreateDataset),
+      vscode.commands.registerCommand("lighthouse.ai.fetchFile", this.aiFetchFile),
     ];
 
     context.subscriptions.push(...commands);
   }
 
   private async aiUploadFile(params: any) {
-    const result = await this.mcpClient.callTool(
-      "lighthouse_upload_file",
-      params
-    );
+    const result = await this.mcpClient.callTool("lighthouse_upload_file", params);
 
     // Notify AI of completion
     this.aiHooks.notifyCompletion("upload", result);
@@ -506,13 +483,11 @@ export class LighthouseExtension {
 #### Deliverables:
 
 1. **Advanced Encryption Features**
-
    - Threshold encryption with Kavach integration
    - Access condition management
    - Key sharing and revocation
 
 2. **Dataset Management System**
-
    - Version control for datasets
    - ML model lifecycle management
    - Collaborative dataset sharing
@@ -527,10 +502,7 @@ export class LighthouseExtension {
 ```typescript
 // Advanced Encryption Service
 class AdvancedEncryptionService {
-  async encryptWithConditions(
-    file: Buffer,
-    conditions: AccessCondition[]
-  ): Promise<EncryptedFile> {
+  async encryptWithConditions(file: Buffer, conditions: AccessCondition[]): Promise<EncryptedFile> {
     // Generate threshold keys
     const { masterKey, keyShards } = await this.kavach.generate(3, 5);
 
@@ -542,7 +514,7 @@ class AdvancedEncryptionService {
       this.auth.address,
       encryptedContent.cid,
       this.auth.token,
-      conditions
+      conditions,
     );
 
     // Save key shards with conditions
@@ -550,7 +522,7 @@ class AdvancedEncryptionService {
       this.auth.address,
       encryptedContent.cid,
       this.auth.token,
-      keyShards
+      keyShards,
     );
 
     return {
@@ -570,13 +542,11 @@ class AdvancedEncryptionService {
 #### Deliverables:
 
 1. **Performance Optimization**
-
    - Caching strategies for AI workflows
    - Batch operations for large datasets
    - Connection pooling and request optimization
 
 2. **Security Hardening**
-
    - Authentication token management
    - Secure key storage for AI agents
    - Rate limiting and abuse prevention
@@ -744,7 +714,6 @@ const claudeLighthouseTools = [
 ### Authentication & Authorization
 
 1. **Multi-layer Authentication**
-
    - API key authentication for Lighthouse services
    - Wallet-based authentication for encryption operations
    - JWT token management with refresh cycles
@@ -757,7 +726,6 @@ const claudeLighthouseTools = [
 ### Data Protection
 
 1. **Encryption at Rest and Transit**
-
    - AES-256 encryption for sensitive data
    - TLS 1.3 for all network communications
    - Threshold cryptography for distributed key management
@@ -770,7 +738,6 @@ const claudeLighthouseTools = [
 ### AI Agent Security
 
 1. **Sandboxed Operations**
-
    - Restrict AI agents to authorized file operations
    - Rate limiting and quota management
    - Audit logging for all AI-initiated actions
@@ -812,9 +779,7 @@ const claudeLighthouseTools = [
    class BatchOperationManager {
      async uploadBatch(files: FileUpload[]): Promise<BatchResult> {
        // Process files in parallel with concurrency limit
-       const results = await Promise.allSettled(
-         files.map((file) => this.uploadWithRetry(file))
-       );
+       const results = await Promise.allSettled(files.map((file) => this.uploadWithRetry(file)));
 
        return this.processBatchResults(results);
      }
@@ -913,7 +878,6 @@ describe("Full Workflow Tests", () => {
 ### Package Distribution
 
 1. **NPM Packages**
-
    - `@lighthouse/mcp-server`: Standalone MCP server
    - `@lighthouse/ide-core`: Shared extension core
    - `@lighthouse/vscode-extension`: VSCode marketplace package
