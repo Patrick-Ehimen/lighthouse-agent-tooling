@@ -27,6 +27,17 @@ export const config = [
     },
   },
   {
-    ignores: ["dist/**"],
+    ignores: [
+      "**/dist/**",
+      "node_modules/**",
+      "**/*.d.ts",
+      "**/*.min.js",
+      "coverage/**",
+      "**/*.config.*",
+      "eslint.config.*",
+      "lint-staged.config.*",
+      ".husky/**",
+      ".github/**",
+    ],
   },
 ];

@@ -63,7 +63,10 @@
     "build": "tsc -p ./",
     "dev": "tsc -watch -p ./",
     "package": "vsce package",
-    "lint": "eslint src --ext ts",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "npm run compile && node ./out/test/runTest.js"
   },
   "dependencies": {
@@ -74,9 +77,6 @@
   "devDependencies": {
     "@types/vscode": "^1.74.0",
     "@types/node": "^20.0.0",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "eslint": "^8.0.0",
     "typescript": "^5.0.0",
     "vsce": "^2.15.0"
   }
