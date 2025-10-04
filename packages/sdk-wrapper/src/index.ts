@@ -1,0 +1,43 @@
+/**
+ * @lighthouse-tooling/sdk-wrapper
+ *
+ * Unified SDK wrapper that abstracts Lighthouse and Kavach SDK complexity for AI agents.
+ * This is a foundational component used by MCP servers and IDE extensions to interact
+ * with Lighthouse storage services.
+ */
+
+// Main SDK class
+export { LighthouseAISDK } from "./LighthouseAISDK";
+
+// Core managers
+export { AuthenticationManager } from "./auth/AuthenticationManager";
+export { ProgressTracker } from "./progress/ProgressTracker";
+
+// Types and interfaces
+export type {
+  LighthouseConfig,
+  AuthState,
+  UploadOptions,
+  DownloadOptions,
+  ProgressInfo,
+  FileInfo,
+  ListFilesResponse,
+  SDKEventType,
+  SDKEvent,
+} from "./types";
+
+// Utility functions
+export {
+  generateOperationId,
+  validateFile,
+  createFileInfo,
+  getMimeType,
+  formatBytes,
+  formatDuration,
+  retryWithBackoff,
+  isRetryableError,
+} from "./utils/helpers";
+
+// Default export
+import { LighthouseAISDK } from "./LighthouseAISDK";
+export default LighthouseAISDK;
