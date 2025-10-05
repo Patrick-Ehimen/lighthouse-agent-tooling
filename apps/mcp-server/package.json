@@ -1,9 +1,30 @@
 {
   "name": "@lighthouse-tooling/mcp-server",
   "version": "0.1.0",
+  "description": "MCP (Model Context Protocol) server for Lighthouse storage integration",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "check-types": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "start": "node dist/index.js"
+  },
   "dependencies": {
     "@lighthouse-tooling/sdk-wrapper": "workspace:*",
     "@lighthouse-tooling/types": "workspace:*",
-    "@modelcontextprotocol/sdk": "latest"
+    "@lighthouse-tooling/shared": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "vitest": "^1.0.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "typescript": "^5.0.0"
   }
 }
