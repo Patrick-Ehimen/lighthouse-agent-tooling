@@ -1,6 +1,7 @@
 {
   "name": "@lighthouse-tooling/shared",
   "version": "0.1.0",
+  "description": "Shared utilities and constants for Lighthouse AI integration system",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -16,5 +17,22 @@
     "ts-jest": "^29.1.1",
     "@types/jest": "^29.5.5",
     "typescript": "^5.0.0"
+    "dev": "tsc --watch",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@lighthouse-tooling/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "restricted"
   }
 }
