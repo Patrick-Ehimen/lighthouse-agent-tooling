@@ -16,6 +16,11 @@
     "@lighthouse-tooling/types": "workspace:*",
     "@modelcontextprotocol/sdk": "latest"
   },
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   "devDependencies": {
     "jest": "^29.7.0",
     "ts-jest": "^29.1.1",

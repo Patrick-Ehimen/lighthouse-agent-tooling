@@ -16,10 +16,10 @@
     "@lighthouse-tooling/shared": "workspace:*",
     "@lighthouse-web3/sdk": "^0.2.3"
   },
-  "devDependencies": {
-    "jest": "^29.7.0",
-    "ts-jest": "^29.1.1",
-    "@types/jest": "^29.5.5",
-    "typescript": "^5.0.0"
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   }
 }
