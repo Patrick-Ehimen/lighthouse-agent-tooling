@@ -13,8 +13,9 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "type-check": "turbo run check-types",
-    "clean": "turbo run clean"
+    "test:coverage": "turbo run test:coverage",
+    "clean": "turbo run clean",
+    "verify-tests": "node scripts/verify-tests.js"
   },
   "repository": {
     "type": "git",
@@ -34,6 +35,9 @@
     "typescript": "^5.0.0",
     "@types/node": "^20.0.0",
     "eslint": "^8.0.0",
-    "prettier": "^3.0.0"
+    "prettier": "^3.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "@types/jest": "^29.5.5"
   }
 }
