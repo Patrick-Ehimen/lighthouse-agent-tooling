@@ -1,6 +1,16 @@
 {
   "name": "@lighthouse-tooling/mcp-server",
   "version": "0.1.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src/**/*.ts",
+    "clean": "rm -rf dist",
+    "dev": "ts-node src/index.ts"
+  },
   "dependencies": {
     "@lighthouse-tooling/sdk-wrapper": "workspace:*",
     "@lighthouse-tooling/types": "workspace:*",
@@ -11,5 +21,12 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "@types/jest": "^29.5.5",
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.0",
+    "@lighthouse-tooling/shared": "workspace:*"
   }
 }

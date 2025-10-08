@@ -1,6 +1,7 @@
 {
   "name": "@lighthouse-tooling/types",
   "version": "0.1.0",
+  "description": "Shared TypeScript types and interfaces for Lighthouse AI integration system",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -8,5 +9,26 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "lighthouse",
+    "types",
+    "typescript",
+    "mcp",
+    "ai",
+    "storage"
+  ],
+  "author": "Lighthouse Team",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.9.2"
   }
 }

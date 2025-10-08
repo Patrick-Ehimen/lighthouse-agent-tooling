@@ -1,6 +1,16 @@
 {
   "name": "@lighthouse-tooling/sdk-wrapper",
   "version": "0.1.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src/**/*.ts",
+    "clean": "rm -rf dist"
+  },
   "dependencies": {
     "@lighthouse-tooling/types": "workspace:*",
     "@lighthouse-tooling/shared": "workspace:*",
