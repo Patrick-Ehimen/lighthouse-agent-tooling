@@ -18,7 +18,7 @@
     "ci:local": "pnpm run lint && pnpm run format:check",
     "test": "turbo run test",
     "clean": "turbo run clean",
-    "prepare": "husky"
+    "prepare": "husky",
     "test:coverage": "turbo run test:coverage",
     "verify-tests": "node scripts/verify-tests.js"
   },
@@ -42,7 +42,10 @@
     "eslint": "^9.36.0",
     "prettier": "^3.3.3",
     "husky": "^9.1.6",
-    "lint-staged": "^15.2.10"
+    "lint-staged": "^15.2.10",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "@types/jest": "^29.5.5"
   },
   "pnpm": {
     "overrides": {
@@ -52,10 +55,5 @@
       "typescript-eslint": "8.36.0",
       "@eslint/js": "^9.31.0"
     }
-    "eslint": "^8.0.0",
-    "prettier": "^3.0.0",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.1.1",
-    "@types/jest": "^29.5.5"
   }
 }
