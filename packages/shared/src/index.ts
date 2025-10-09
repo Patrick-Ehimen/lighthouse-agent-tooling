@@ -23,3 +23,6 @@ export type {
   LoggerConfig,
   ConcurrencyConfig,
 } from "./utils";
+
+// Test utilities are only exported in development/test environments
+// They are not included in the production build

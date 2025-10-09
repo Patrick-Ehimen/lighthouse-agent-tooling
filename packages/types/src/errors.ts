@@ -26,10 +26,10 @@ export class LighthouseError extends Error {
     severity: ErrorSeverity = ErrorSeverity.ERROR,
     data?: Record<string, unknown>,
     originalError?: Error,
-    retryable: boolean = false
+    retryable: boolean = false,
   ) {
     super(message);
-    this.name = 'LighthouseError';
+    this.name = "LighthouseError";
     this.code = code;
     this.severity = severity;
     this.data = data;
@@ -50,7 +50,7 @@ export class LighthouseError extends Error {
       data: this.data,
       timestamp: this.timestamp.toISOString(),
       retryable: this.retryable,
-      stack: this.stack
+      stack: this.stack,
     };
   }
 }
@@ -82,35 +82,35 @@ export interface ErrorJSON {
  */
 export enum ErrorType {
   /** Authentication errors */
-  AUTHENTICATION_ERROR = 'authentication_error',
+  AUTHENTICATION_ERROR = "authentication_error",
   /** Authorization errors */
-  AUTHORIZATION_ERROR = 'authorization_error',
+  AUTHORIZATION_ERROR = "authorization_error",
   /** Network errors */
-  NETWORK_ERROR = 'network_error',
+  NETWORK_ERROR = "network_error",
   /** File operation errors */
-  FILE_ERROR = 'file_error',
+  FILE_ERROR = "file_error",
   /** Encryption errors */
-  ENCRYPTION_ERROR = 'encryption_error',
+  ENCRYPTION_ERROR = "encryption_error",
   /** Upload errors */
-  UPLOAD_ERROR = 'upload_error',
+  UPLOAD_ERROR = "upload_error",
   /** Download errors */
-  DOWNLOAD_ERROR = 'download_error',
+  DOWNLOAD_ERROR = "download_error",
   /** Dataset errors */
-  DATASET_ERROR = 'dataset_error',
+  DATASET_ERROR = "dataset_error",
   /** MCP protocol errors */
-  MCP_ERROR = 'mcp_error',
+  MCP_ERROR = "mcp_error",
   /** Configuration errors */
-  CONFIGURATION_ERROR = 'configuration_error',
+  CONFIGURATION_ERROR = "configuration_error",
   /** Validation errors */
-  VALIDATION_ERROR = 'validation_error',
+  VALIDATION_ERROR = "validation_error",
   /** Rate limit errors */
-  RATE_LIMIT_ERROR = 'rate_limit_error',
+  RATE_LIMIT_ERROR = "rate_limit_error",
   /** Quota exceeded errors */
-  QUOTA_EXCEEDED_ERROR = 'quota_exceeded_error',
+  QUOTA_EXCEEDED_ERROR = "quota_exceeded_error",
   /** Service unavailable errors */
-  SERVICE_UNAVAILABLE_ERROR = 'service_unavailable_error',
+  SERVICE_UNAVAILABLE_ERROR = "service_unavailable_error",
   /** Unknown errors */
-  UNKNOWN_ERROR = 'unknown_error'
+  UNKNOWN_ERROR = "unknown_error",
 }
 
 /**
@@ -118,13 +118,13 @@ export enum ErrorType {
  */
 export enum ErrorSeverity {
   /** Low severity - informational */
-  INFO = 'info',
+  INFO = "info",
   /** Medium severity - warning */
-  WARNING = 'warning',
+  WARNING = "warning",
   /** High severity - error */
-  ERROR = 'error',
+  ERROR = "error",
   /** Critical severity - fatal */
-  CRITICAL = 'critical'
+  CRITICAL = "critical",
 }
 
 /**
@@ -292,9 +292,9 @@ export const DEFAULT_RETRY_CONFIGS: Record<string, RetryConfig> = {
     retryConditions: [
       {
         errorTypes: [ErrorType.NETWORK_ERROR, ErrorType.UPLOAD_ERROR],
-        statusCodes: [500, 502, 503, 504]
-      }
-    ]
+        statusCodes: [500, 502, 503, 504],
+      },
+    ],
   },
   /** File download operations */
   download: {
@@ -307,9 +307,9 @@ export const DEFAULT_RETRY_CONFIGS: Record<string, RetryConfig> = {
     retryConditions: [
       {
         errorTypes: [ErrorType.NETWORK_ERROR, ErrorType.DOWNLOAD_ERROR],
-        statusCodes: [500, 502, 503, 504]
-      }
-    ]
+        statusCodes: [500, 502, 503, 504],
+      },
+    ],
   },
   /** Authentication operations */
   auth: {
@@ -322,9 +322,9 @@ export const DEFAULT_RETRY_CONFIGS: Record<string, RetryConfig> = {
     retryConditions: [
       {
         errorTypes: [ErrorType.AUTHENTICATION_ERROR],
-        statusCodes: [401, 403]
-      }
-    ]
+        statusCodes: [401, 403],
+      },
+    ],
   },
   /** MCP operations */
   mcp: {
@@ -337,8 +337,8 @@ export const DEFAULT_RETRY_CONFIGS: Record<string, RetryConfig> = {
     retryConditions: [
       {
         errorTypes: [ErrorType.MCP_ERROR, ErrorType.NETWORK_ERROR],
-        statusCodes: [500, 502, 503, 504]
-      }
-    ]
-  }
+        statusCodes: [500, 502, 503, 504],
+      },
+    ],
+  },
 };

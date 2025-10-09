@@ -16,19 +16,18 @@ export class AsyncUtils {
   static async withConcurrency<T, R>(
     items: T[],
     processor: (item: T, index: number) => Promise<R>,
-    config: ConcurrencyConfig = {}
+    config: ConcurrencyConfig = {},
   ): Promise<R[]> {
     const { maxConcurrent = 3 } = config;
     const results: R[] = new Array(items.length);
     const executing: Promise<void>[] = [];
 
     for (let i = 0; i < items.length; i++) {
-      const promise = this.processWithTimeout(
-        () => processor(items[i], i),
-        config.timeout
-      ).then((result) => {
-        results[i] = result;
-      });
+      const promise = this.processWithTimeout(() => processor(items[i], i), config.timeout).then(
+        (result) => {
+          results[i] = result;
+        },
+      );
 
       executing.push(promise);
 
@@ -54,12 +53,12 @@ export class AsyncUtils {
   static async withTimeout<T>(
     promise: Promise<T>,
     timeoutMs: number,
-    timeoutMessage = "Operation timed out"
+    timeoutMessage = "Operation timed out",
   ): Promise<T> {
     return Promise.race([
       promise,
       new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs)
+        setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs),
       ),
     ]);
   }
@@ -67,10 +66,7 @@ export class AsyncUtils {
   /**
    * Process function with optional timeout
    */
-  private static async processWithTimeout<T>(
-    fn: () => Promise<T>,
-    timeout?: number
-  ): Promise<T> {
+  private static async processWithTimeout<T>(fn: () => Promise<T>, timeout?: number): Promise<T> {
     const promise = fn();
     return timeout ? this.withTimeout(promise, timeout) : promise;
   }
@@ -78,14 +74,9 @@ export class AsyncUtils {
   /**
    * Check if promise is settled (resolved or rejected)
    */
-  private static async isPromiseSettled(
-    promise: Promise<any>
-  ): Promise<boolean> {
+  private static async isPromiseSettled(promise: Promise<any>): Promise<boolean> {
     try {
-      await Promise.race([
-        promise,
-        new Promise((resolve) => setTimeout(resolve, 0)),
-      ]);
+      await Promise.race([promise, new Promise((resolve) => setTimeout(resolve, 0))]);
       return true;
     } catch {
       return true;
@@ -98,7 +89,7 @@ export class AsyncUtils {
   static async processBatches<T, R>(
     items: T[],
     processor: (batch: T[]) => Promise<R[]>,
-    batchSize = 10
+    batchSize = 10,
   ): Promise<R[]> {
     const results: R[] = [];
 
@@ -116,7 +107,7 @@ export class AsyncUtils {
    */
   static debounce<T extends (...args: any[]) => any>(
     func: T,
-    waitMs: number
+    waitMs: number,
   ): (...args: Parameters<T>) => Promise<ReturnType<T>> {
     let timeoutId: NodeJS.Timeout;
     let resolvePromise: (value: ReturnType<T>) => void;
@@ -145,7 +136,7 @@ export class AsyncUtils {
    */
   static throttle<T extends (...args: any[]) => any>(
     func: T,
-    limitMs: number
+    limitMs: number,
   ): (...args: Parameters<T>) => Promise<ReturnType<T> | undefined> {
     let lastExecution = 0;
     let timeoutId: NodeJS.Timeout;
@@ -181,7 +172,7 @@ export class AsyncUtils {
    */
   static async sequence<T, R>(
     items: T[],
-    processor: (item: T, index: number) => Promise<R>
+    processor: (item: T, index: number) => Promise<R>,
   ): Promise<R[]> {
     const results: R[] = [];
 
@@ -204,10 +195,8 @@ export class AsyncUtils {
    * Execute promises in parallel, collecting both successes and failures
    */
   static async parallelSettled<T>(
-    promises: Promise<T>[]
-  ): Promise<
-    Array<{ status: "fulfilled" | "rejected"; value?: T; reason?: any }>
-  > {
+    promises: Promise<T>[],
+  ): Promise<Array<{ status: "fulfilled" | "rejected"; value?: T; reason?: any }>> {
     const results = await Promise.allSettled(promises);
     return results.map((result) => ({
       status: result.status,
@@ -222,7 +211,7 @@ export class AsyncUtils {
   static async raceWithTimeout<T>(
     promises: Promise<T>[],
     timeoutMs: number,
-    timeoutMessage = "Race operation timed out"
+    timeoutMessage = "Race operation timed out",
   ): Promise<T> {
     return this.withTimeout(Promise.race(promises), timeoutMs, timeoutMessage);
   }
@@ -235,7 +224,7 @@ export class AsyncUtils {
     maxAttempts = 3,
     baseDelayMs = 1000,
     maxDelayMs = 10000,
-    backoffMultiplier = 2
+    backoffMultiplier = 2,
   ): Promise<T> {
     let lastError: Error;
     let delay = baseDelayMs;
@@ -286,13 +275,9 @@ export class AsyncUtils {
       failureThreshold?: number;
       resetTimeoutMs?: number;
       monitoringPeriodMs?: number;
-    } = {}
+    } = {},
   ): T {
-    const {
-      failureThreshold = 5,
-      resetTimeoutMs = 60000,
-      monitoringPeriodMs = 10000,
-    } = options;
+    const { failureThreshold = 5, resetTimeoutMs = 60000, monitoringPeriodMs = 10000 } = options;
 
     let failures = 0;
     let lastFailureTime = 0;

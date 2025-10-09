@@ -1,3 +1,17 @@
+# lighthouse-agent-tooling
+
+Lighthouse Agent Tooling – A set of connectors, IDE extensions, and AI-native developer tools to seamlessly integrate Lighthouse into AI-powered workflows. Supports MCP (Model Context Protocol) connectors, Cursor/IDE extensions for pinning and encrypting datasets/models.
+
+## Code Style
+
+This repo uses ESLint (flat config) and Prettier for consistent code quality and formatting.
+
+- Run lint: `pnpm lint`
+- Auto-fix: `pnpm lint:fix`
+- Format: `pnpm format`
+
+Pre-commit hooks via Husky run lint-staged to format and lint changed files.
+
 # Lighthouse Agent Tooling
 
 Lighthouse Agent Tooling – A set of connectors, IDE extensions, and AI-native developer tools to seamlessly integrate Lighthouse into AI-powered workflows. Supports MCP (Model Context Protocol) connectors, Cursor/IDE extensions for pinning and encrypting datasets/models.
@@ -70,19 +84,14 @@ The `@lighthouse-tooling/types` package provides comprehensive TypeScript interf
 ### Usage
 
 ```typescript
-import { 
-  UploadResult, 
-  Dataset, 
-  AuthConfig,
-  LIGHTHOUSE_MCP_TOOLS 
-} from '@lighthouse-tooling/types';
+import { UploadResult, Dataset, AuthConfig, LIGHTHOUSE_MCP_TOOLS } from "@lighthouse-tooling/types";
 
 // Create upload result
 const uploadResult: UploadResult = {
-  cid: 'QmHash...',
+  cid: "QmHash...",
   size: 1024,
   encrypted: true,
-  uploadedAt: new Date()
+  uploadedAt: new Date(),
 };
 ```
 

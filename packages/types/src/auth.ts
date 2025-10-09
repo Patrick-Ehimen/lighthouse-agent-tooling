@@ -28,15 +28,15 @@ export interface AuthConfig {
  */
 export enum AuthMethod {
   /** API key authentication */
-  API_KEY = 'api_key',
+  API_KEY = "api_key",
   /** Wallet-based authentication */
-  WALLET = 'wallet',
+  WALLET = "wallet",
   /** JWT token authentication */
-  JWT = 'jwt',
+  JWT = "jwt",
   /** OAuth authentication */
-  OAUTH = 'oauth',
+  OAUTH = "oauth",
   /** Custom authentication */
-  CUSTOM = 'custom'
+  CUSTOM = "custom",
 }
 
 /**
@@ -68,13 +68,13 @@ export interface TokenInfo {
  */
 export enum TokenType {
   /** Bearer token */
-  BEARER = 'Bearer',
+  BEARER = "Bearer",
   /** Basic authentication */
-  BASIC = 'Basic',
+  BASIC = "Basic",
   /** API key */
-  API_KEY = 'ApiKey',
+  API_KEY = "ApiKey",
   /** Custom token type */
-  CUSTOM = 'Custom'
+  CUSTOM = "Custom",
 }
 
 /**
@@ -120,17 +120,17 @@ export interface APICredentials {
  */
 export enum APIAuthMethod {
   /** API key in header */
-  API_KEY_HEADER = 'api_key_header',
+  API_KEY_HEADER = "api_key_header",
   /** API key in query parameter */
-  API_KEY_QUERY = 'api_key_query',
+  API_KEY_QUERY = "api_key_query",
   /** Bearer token */
-  BEARER_TOKEN = 'bearer_token',
+  BEARER_TOKEN = "bearer_token",
   /** Basic authentication */
-  BASIC_AUTH = 'basic_auth',
+  BASIC_AUTH = "basic_auth",
   /** OAuth 2.0 */
-  OAUTH2 = 'oauth2',
+  OAUTH2 = "oauth2",
   /** Custom authentication */
-  CUSTOM = 'custom'
+  CUSTOM = "custom",
 }
 
 /**
@@ -208,13 +208,13 @@ export interface PermissionCondition {
  */
 export enum ConditionType {
   /** Time-based condition */
-  TIME = 'time',
+  TIME = "time",
   /** IP address condition */
-  IP_ADDRESS = 'ip_address',
+  IP_ADDRESS = "ip_address",
   /** Resource condition */
-  RESOURCE = 'resource',
+  RESOURCE = "resource",
   /** Custom condition */
-  CUSTOM = 'custom'
+  CUSTOM = "custom",
 }
 
 /**
@@ -222,23 +222,23 @@ export enum ConditionType {
  */
 export enum ConditionOperator {
   /** Equals */
-  EQUALS = 'equals',
+  EQUALS = "equals",
   /** Not equals */
-  NOT_EQUALS = 'not_equals',
+  NOT_EQUALS = "not_equals",
   /** Greater than */
-  GREATER_THAN = 'greater_than',
+  GREATER_THAN = "greater_than",
   /** Less than */
-  LESS_THAN = 'less_than',
+  LESS_THAN = "less_than",
   /** Contains */
-  CONTAINS = 'contains',
+  CONTAINS = "contains",
   /** Starts with */
-  STARTS_WITH = 'starts_with',
+  STARTS_WITH = "starts_with",
   /** Ends with */
-  ENDS_WITH = 'ends_with',
+  ENDS_WITH = "ends_with",
   /** In list */
-  IN = 'in',
+  IN = "in",
   /** Not in list */
-  NOT_IN = 'not_in'
+  NOT_IN = "not_in",
 }
 
 /**
@@ -276,13 +276,13 @@ export interface NotificationPreferences {
  */
 export enum NotificationType {
   /** Authentication events */
-  AUTH = 'auth',
+  AUTH = "auth",
   /** Security alerts */
-  SECURITY = 'security',
+  SECURITY = "security",
   /** System updates */
-  SYSTEM = 'system',
+  SYSTEM = "system",
   /** Usage alerts */
-  USAGE = 'usage'
+  USAGE = "usage",
 }
 
 /**
@@ -306,19 +306,19 @@ export interface AuthResult {
  */
 export enum AuthErrorCode {
   /** Invalid credentials */
-  INVALID_CREDENTIALS = 'invalid_credentials',
+  INVALID_CREDENTIALS = "invalid_credentials",
   /** Token expired */
-  TOKEN_EXPIRED = 'token_expired',
+  TOKEN_EXPIRED = "token_expired",
   /** Insufficient permissions */
-  INSUFFICIENT_PERMISSIONS = 'insufficient_permissions',
+  INSUFFICIENT_PERMISSIONS = "insufficient_permissions",
   /** Account locked */
-  ACCOUNT_LOCKED = 'account_locked',
+  ACCOUNT_LOCKED = "account_locked",
   /** Two-factor required */
-  TWO_FACTOR_REQUIRED = 'two_factor_required',
+  TWO_FACTOR_REQUIRED = "two_factor_required",
   /** Rate limit exceeded */
-  RATE_LIMIT_EXCEEDED = 'rate_limit_exceeded',
+  RATE_LIMIT_EXCEEDED = "rate_limit_exceeded",
   /** Network error */
-  NETWORK_ERROR = 'network_error',
+  NETWORK_ERROR = "network_error",
   /** Unknown error */
-  UNKNOWN_ERROR = 'unknown_error'
+  UNKNOWN_ERROR = "unknown_error",
 }

@@ -3,7 +3,7 @@
  * @fileoverview Defines types for MCP server implementation and tool definitions
  */
 
-import { AccessCondition, UploadConfig, DatasetConfig } from './core.js';
+import { AccessCondition, UploadConfig, DatasetConfig } from "./core.js";
 
 /**
  * Definition of an MCP tool that can be called by AI agents
@@ -28,7 +28,7 @@ export interface MCPToolDefinition {
  */
 export interface MCPToolInputSchema {
   /** JSON schema type */
-  type: 'object';
+  type: "object";
   /** Properties of the input object */
   properties: Record<string, MCPToolProperty>;
   /** Required properties */
@@ -42,7 +42,7 @@ export interface MCPToolInputSchema {
  */
 export interface MCPToolProperty {
   /** Type of the property */
-  type: 'string' | 'number' | 'boolean' | 'array' | 'object';
+  type: "string" | "number" | "boolean" | "array" | "object";
   /** Description of the property */
   description: string;
   /** Default value for the property */
@@ -70,13 +70,13 @@ export interface MCPToolProperty {
  */
 export enum ExecutionTimeCategory {
   /** Fast operations (< 1 second) */
-  FAST = 'fast',
+  FAST = "fast",
   /** Medium operations (1-10 seconds) */
-  MEDIUM = 'medium',
+  MEDIUM = "medium",
   /** Slow operations (10+ seconds) */
-  SLOW = 'slow',
+  SLOW = "slow",
   /** Variable execution time */
-  VARIABLE = 'variable'
+  VARIABLE = "variable",
 }
 
 /**
@@ -84,7 +84,7 @@ export enum ExecutionTimeCategory {
  */
 export interface MCPRequest {
   /** JSON-RPC version */
-  jsonrpc: '2.0';
+  jsonrpc: "2.0";
   /** Unique request identifier */
   id: string | number;
   /** Method being called */
@@ -98,7 +98,7 @@ export interface MCPRequest {
  */
 export interface MCPResponse {
   /** JSON-RPC version */
-  jsonrpc: '2.0';
+  jsonrpc: "2.0";
   /** Request identifier (matches request) */
   id: string | number;
   /** Result data (for successful responses) */
@@ -112,17 +112,17 @@ export interface MCPResponse {
  */
 export enum MCPMethod {
   /** List available tools */
-  LIST_TOOLS = 'tools/list',
+  LIST_TOOLS = "tools/list",
   /** Call a specific tool */
-  CALL_TOOL = 'tools/call',
+  CALL_TOOL = "tools/call",
   /** List available resources */
-  LIST_RESOURCES = 'resources/list',
+  LIST_RESOURCES = "resources/list",
   /** Read a specific resource */
-  READ_RESOURCE = 'resources/read',
+  READ_RESOURCE = "resources/read",
   /** Initialize the connection */
-  INITIALIZE = 'initialize',
+  INITIALIZE = "initialize",
   /** Notify of completion */
-  NOTIFY = 'notify'
+  NOTIFY = "notify",
 }
 
 /**
@@ -158,7 +158,7 @@ export interface MCPResult {
  */
 export interface MCPContent {
   /** Type of content */
-  type: 'text' | 'image' | 'file' | 'data';
+  type: "text" | "image" | "file" | "data";
   /** Text content */
   text?: string;
   /** Binary data (base64 encoded) */
@@ -204,7 +204,7 @@ export enum MCPErrorCode {
   /** Resource not found */
   RESOURCE_NOT_FOUND = -32003,
   /** Operation failed */
-  OPERATION_FAILED = -32004
+  OPERATION_FAILED = -32004,
 }
 
 /**
@@ -234,11 +234,11 @@ export interface SamplingConfiguration {
  */
 export enum SamplingStrategy {
   /** Random sampling */
-  RANDOM = 'random',
+  RANDOM = "random",
   /** Systematic sampling */
-  SYSTEMATIC = 'systematic',
+  SYSTEMATIC = "systematic",
   /** Stratified sampling */
-  STRATIFIED = 'stratified'
+  STRATIFIED = "stratified",
 }
 
 /**
@@ -246,110 +246,110 @@ export enum SamplingStrategy {
  */
 export const LIGHTHOUSE_MCP_TOOLS: MCPToolDefinition[] = [
   {
-    name: 'lighthouse_upload_file',
-    description: 'Upload a file to IPFS via Lighthouse with optional encryption',
+    name: "lighthouse_upload_file",
+    description: "Upload a file to IPFS via Lighthouse with optional encryption",
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {
         filePath: {
-          type: 'string',
-          description: 'Path to the file to upload'
+          type: "string",
+          description: "Path to the file to upload",
         },
         encrypt: {
-          type: 'boolean',
-          description: 'Whether to encrypt the file',
-          default: false
+          type: "boolean",
+          description: "Whether to encrypt the file",
+          default: false,
         },
         accessConditions: {
-          type: 'array',
-          description: 'Array of access control conditions',
+          type: "array",
+          description: "Array of access control conditions",
           items: {
-            type: 'object',
-            description: 'Access condition object',
+            type: "object",
+            description: "Access condition object",
             properties: {
-              type: { type: 'string', description: 'Type of access condition' },
-              condition: { type: 'string', description: 'Access condition to be met' },
-              value: { type: 'string', description: 'Value or threshold for the condition' }
+              type: { type: "string", description: "Type of access condition" },
+              condition: { type: "string", description: "Access condition to be met" },
+              value: { type: "string", description: "Value or threshold for the condition" },
             },
-            required: ['type', 'condition', 'value']
-          }
+            required: ["type", "condition", "value"],
+          },
         },
         tags: {
-          type: 'array',
-          description: 'Tags for organization',
-          items: { type: 'string', description: 'Tag string' }
-        }
+          type: "array",
+          description: "Tags for organization",
+          items: { type: "string", description: "Tag string" },
+        },
       },
-      required: ['filePath']
+      required: ["filePath"],
     },
     requiresAuth: true,
     supportsBatch: false,
-    executionTime: ExecutionTimeCategory.MEDIUM
+    executionTime: ExecutionTimeCategory.MEDIUM,
   },
   {
-    name: 'lighthouse_create_dataset',
-    description: 'Create a managed dataset collection with metadata',
+    name: "lighthouse_create_dataset",
+    description: "Create a managed dataset collection with metadata",
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {
         name: {
-          type: 'string',
-          description: 'Dataset name'
+          type: "string",
+          description: "Dataset name",
         },
         description: {
-          type: 'string',
-          description: 'Dataset description'
+          type: "string",
+          description: "Dataset description",
         },
         files: {
-          type: 'array',
-          description: 'Array of file paths to include',
-          items: { type: 'string', description: 'File path string' }
+          type: "array",
+          description: "Array of file paths to include",
+          items: { type: "string", description: "File path string" },
         },
         metadata: {
-          type: 'object',
-          description: 'Additional metadata',
+          type: "object",
+          description: "Additional metadata",
           properties: {
-            version: { type: 'string', description: 'Dataset version' },
-            author: { type: 'string', description: 'Dataset author' },
-            license: { type: 'string', description: 'Dataset license' }
-          }
+            version: { type: "string", description: "Dataset version" },
+            author: { type: "string", description: "Dataset author" },
+            license: { type: "string", description: "Dataset license" },
+          },
         },
         encrypt: {
-          type: 'boolean',
-          description: 'Whether to encrypt the dataset',
-          default: false
-        }
+          type: "boolean",
+          description: "Whether to encrypt the dataset",
+          default: false,
+        },
       },
-      required: ['name', 'files']
+      required: ["name", "files"],
     },
     requiresAuth: true,
     supportsBatch: true,
-    executionTime: ExecutionTimeCategory.SLOW
+    executionTime: ExecutionTimeCategory.SLOW,
   },
   {
-    name: 'lighthouse_fetch_file',
-    description: 'Download and optionally decrypt a file from Lighthouse',
+    name: "lighthouse_fetch_file",
+    description: "Download and optionally decrypt a file from Lighthouse",
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {
         cid: {
-          type: 'string',
-          description: 'IPFS CID of the file'
+          type: "string",
+          description: "IPFS CID of the file",
         },
         outputPath: {
-          type: 'string',
-          description: 'Local path to save the file'
+          type: "string",
+          description: "Local path to save the file",
         },
         decrypt: {
-          type: 'boolean',
-          description: 'Whether to decrypt the file',
-          default: false
-        }
+          type: "boolean",
+          description: "Whether to decrypt the file",
+          default: false,
+        },
       },
-      required: ['cid']
+      required: ["cid"],
     },
     requiresAuth: true,
     supportsBatch: false,
-    executionTime: ExecutionTimeCategory.MEDIUM
-  }
+    executionTime: ExecutionTimeCategory.MEDIUM,
+  },
 ];
