@@ -15,7 +15,7 @@ export const wait = (ms: number): Promise<void> => {
 export const waitFor = async (
   condition: () => boolean | Promise<boolean>,
   timeout: number = 5000,
-  interval: number = 100
+  interval: number = 100,
 ): Promise<void> => {
   const startTime = Date.now();
 
@@ -60,10 +60,7 @@ export const cleanupTempDir = (dirPath: string): void => {
 /**
  * Create a temporary file with content
  */
-export const createTempFile = (
-  content: string,
-  extension: string = ".txt"
-): string => {
+export const createTempFile = (content: string, extension: string = ".txt"): string => {
   const fs = require("fs");
   const path = require("path");
 
@@ -131,7 +128,7 @@ export const captureConsole = () => {
  * Create a mock function with specific behavior
  */
 export const createMockFunction = <T extends (...args: any[]) => any>(
-  implementation?: T
+  implementation?: T,
 ): jest.MockedFunction<T> => {
   const mockFn = jest.fn();
 
@@ -147,7 +144,7 @@ export const createMockFunction = <T extends (...args: any[]) => any>(
  */
 export const createSpy = <T extends object, K extends keyof T>(
   object: T,
-  method: K
+  method: K,
 ): jest.SpyInstance => {
   return jest.spyOn(object, method as any);
 };
@@ -157,7 +154,7 @@ export const createSpy = <T extends object, K extends keyof T>(
  */
 export const expectToThrow = async (
   fn: () => Promise<any> | any,
-  expectedMessage?: string | RegExp
+  expectedMessage?: string | RegExp,
 ): Promise<Error> => {
   let error: Error | undefined;
 
@@ -185,10 +182,7 @@ export const expectToThrow = async (
 /**
  * Create a promise that resolves after a delay
  */
-export const delayedResolve = <T>(
-  value: T,
-  delay: number = 100
-): Promise<T> => {
+export const delayedResolve = <T>(value: T, delay: number = 100): Promise<T> => {
   return new Promise((resolve) => {
     setTimeout(() => resolve(value), delay);
   });
@@ -197,10 +191,7 @@ export const delayedResolve = <T>(
 /**
  * Create a promise that rejects after a delay
  */
-export const delayedReject = (
-  error: Error,
-  delay: number = 100
-): Promise<never> => {
+export const delayedReject = (error: Error, delay: number = 100): Promise<never> => {
   return new Promise((_, reject) => {
     setTimeout(() => reject(error), delay);
   });
@@ -211,8 +202,7 @@ export const delayedReject = (
  */
 export const generateTestData = {
   string: (length: number = 10): string => {
-    const chars =
-      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     let result = "";
     for (let i = 0; i < length; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -234,13 +224,10 @@ export const generateTestData = {
 
   cid: (): string => {
     // Base58 alphabet (excludes 0, O, I, l to avoid confusion)
-    const base58chars =
-      "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+    const base58chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
     let result = "Qm";
     for (let i = 0; i < 44; i++) {
-      result += base58chars.charAt(
-        Math.floor(Math.random() * base58chars.length)
-      );
+      result += base58chars.charAt(Math.floor(Math.random() * base58chars.length));
     }
     return result;
   },

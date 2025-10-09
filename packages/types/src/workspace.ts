@@ -186,17 +186,17 @@ export interface DatasetReference {
  */
 export enum DatasetStatus {
   /** Dataset is active and synced */
-  ACTIVE = 'active',
+  ACTIVE = "active",
   /** Dataset is being uploaded */
-  UPLOADING = 'uploading',
+  UPLOADING = "uploading",
   /** Dataset is being downloaded */
-  DOWNLOADING = 'downloading',
+  DOWNLOADING = "downloading",
   /** Dataset is out of sync */
-  OUT_OF_SYNC = 'out_of_sync',
+  OUT_OF_SYNC = "out_of_sync",
   /** Dataset is archived */
-  ARCHIVED = 'archived',
+  ARCHIVED = "archived",
   /** Dataset has errors */
-  ERROR = 'error'
+  ERROR = "error",
 }
 
 /**
@@ -230,19 +230,19 @@ export interface WorkspaceMetadata {
  */
 export enum WorkspaceType {
   /** Web application */
-  WEB_APP = 'web_app',
+  WEB_APP = "web_app",
   /** Mobile application */
-  MOBILE_APP = 'mobile_app',
+  MOBILE_APP = "mobile_app",
   /** Desktop application */
-  DESKTOP_APP = 'desktop_app',
+  DESKTOP_APP = "desktop_app",
   /** Library or package */
-  LIBRARY = 'library',
+  LIBRARY = "library",
   /** Machine learning project */
-  ML_PROJECT = 'ml_project',
+  ML_PROJECT = "ml_project",
   /** Data science project */
-  DATA_SCIENCE = 'data_science',
+  DATA_SCIENCE = "data_science",
   /** General project */
-  GENERAL = 'general'
+  GENERAL = "general",
 }
 
 /**
@@ -264,17 +264,17 @@ export interface FrameworkInfo {
  */
 export enum FrameworkType {
   /** Frontend framework */
-  FRONTEND = 'frontend',
+  FRONTEND = "frontend",
   /** Backend framework */
-  BACKEND = 'backend',
+  BACKEND = "backend",
   /** Full-stack framework */
-  FULL_STACK = 'full_stack',
+  FULL_STACK = "full_stack",
   /** Testing framework */
-  TESTING = 'testing',
+  TESTING = "testing",
   /** Build tool */
-  BUILD_TOOL = 'build_tool',
+  BUILD_TOOL = "build_tool",
   /** Other framework */
-  OTHER = 'other'
+  OTHER = "other",
 }
 
 /**
@@ -300,15 +300,15 @@ export interface DependencyInfo {
  */
 export enum DependencyType {
   /** Runtime dependency */
-  RUNTIME = 'runtime',
+  RUNTIME = "runtime",
   /** Development dependency */
-  DEVELOPMENT = 'development',
+  DEVELOPMENT = "development",
   /** Peer dependency */
-  PEER = 'peer',
+  PEER = "peer",
   /** Optional dependency */
-  OPTIONAL = 'optional',
+  OPTIONAL = "optional",
   /** Bundled dependency */
-  BUNDLED = 'bundled'
+  BUNDLED = "bundled",
 }
 
 /**
@@ -334,13 +334,13 @@ export interface AIContext {
  */
 export enum AgentType {
   /** Cursor AI */
-  CURSOR_AI = 'cursor_ai',
+  CURSOR_AI = "cursor_ai",
   /** Claude Assistant */
-  CLAUDE_ASSISTANT = 'claude_assistant',
+  CLAUDE_ASSISTANT = "claude_assistant",
   /** GitHub Copilot */
-  GITHUB_COPILOT = 'github_copilot',
+  GITHUB_COPILOT = "github_copilot",
   /** Custom AI agent */
-  CUSTOM = 'custom'
+  CUSTOM = "custom",
 }
 
 /**
@@ -394,11 +394,11 @@ export interface EncryptionPreferences {
  */
 export enum EncryptionStrength {
   /** Standard encryption */
-  STANDARD = 'standard',
+  STANDARD = "standard",
   /** High encryption */
-  HIGH = 'high',
+  HIGH = "high",
   /** Maximum encryption */
-  MAXIMUM = 'maximum'
+  MAXIMUM = "maximum",
 }
 
 /**
@@ -418,13 +418,13 @@ export interface KeyManagementPreferences {
  */
 export enum KeyStorageMethod {
   /** Local storage */
-  LOCAL = 'local',
+  LOCAL = "local",
   /** Cloud storage */
-  CLOUD = 'cloud',
+  CLOUD = "cloud",
   /** Hardware security module */
-  HSM = 'hsm',
+  HSM = "hsm",
   /** Distributed storage */
-  DISTRIBUTED = 'distributed'
+  DISTRIBUTED = "distributed",
 }
 
 /**
@@ -478,15 +478,15 @@ export interface AIHistoryEntry {
  */
 export enum HistoryEntryType {
   /** File operation */
-  FILE_OPERATION = 'file_operation',
+  FILE_OPERATION = "file_operation",
   /** Dataset operation */
-  DATASET_OPERATION = 'dataset_operation',
+  DATASET_OPERATION = "dataset_operation",
   /** AI interaction */
-  AI_INTERACTION = 'ai_interaction',
+  AI_INTERACTION = "ai_interaction",
   /** System event */
-  SYSTEM_EVENT = 'system_event',
+  SYSTEM_EVENT = "system_event",
   /** Error event */
-  ERROR_EVENT = 'error_event'
+  ERROR_EVENT = "error_event",
 }
 
 /**
@@ -592,11 +592,11 @@ export interface CacheConfiguration {
  */
 export enum CacheStorageType {
   /** Memory cache */
-  MEMORY = 'memory',
+  MEMORY = "memory",
   /** Disk cache */
-  DISK = 'disk',
+  DISK = "disk",
   /** Hybrid cache */
-  HYBRID = 'hybrid'
+  HYBRID = "hybrid",
 }
 
 /**

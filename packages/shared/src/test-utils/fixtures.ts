@@ -152,10 +152,7 @@ export const SAMPLE_DATASETS: Record<string, Dataset> = {
     id: "dataset-complex",
     name: "Complex Test Dataset",
     description: "A complex dataset with multiple files and conditions",
-    files: [
-      SAMPLE_UPLOAD_RESULTS.large!,
-      SAMPLE_UPLOAD_RESULTS.withConditions!,
-    ],
+    files: [SAMPLE_UPLOAD_RESULTS.large!, SAMPLE_UPLOAD_RESULTS.withConditions!],
     metadata: {
       creator: "advanced-user",
       category: "research",

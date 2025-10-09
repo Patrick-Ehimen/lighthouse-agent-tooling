@@ -103,10 +103,7 @@ describe("Test Utilities", () => {
     it("should timeout when condition is never met", async () => {
       const condition = () => false;
 
-      await expectToThrow(
-        () => waitFor(condition, 100, 10),
-        "Condition not met within 100ms"
-      );
+      await expectToThrow(() => waitFor(condition, 100, 10), "Condition not met within 100ms");
     });
 
     it("should generate random test data", () => {

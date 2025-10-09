@@ -155,7 +155,7 @@ export class Logger {
     level: LogLevel,
     message: string,
     context?: Record<string, any>,
-    error?: Error
+    error?: Error,
   ): void {
     // Check if log level is enabled
     if (this.logLevels[level] < this.logLevels[this.config.level]) {
@@ -193,9 +193,7 @@ export class Logger {
 
     const prefix = `[${timestamp}] ${level.toUpperCase()}${component ? ` [${component}]` : ""}:`;
     const contextStr =
-      context && Object.keys(context).length > 0
-        ? ` ${JSON.stringify(context)}`
-        : "";
+      context && Object.keys(context).length > 0 ? ` ${JSON.stringify(context)}` : "";
 
     const logMessage = `${prefix} ${message}${contextStr}`;
 

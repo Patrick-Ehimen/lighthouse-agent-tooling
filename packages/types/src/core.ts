@@ -86,15 +86,15 @@ export interface AccessCondition {
  */
 export enum AccessConditionType {
   /** Token balance requirement */
-  TOKEN_BALANCE = 'token_balance',
+  TOKEN_BALANCE = "token_balance",
   /** Time-based access (before/after specific date) */
-  TIME_BASED = 'time_based',
+  TIME_BASED = "time_based",
   /** Account-based access (specific wallet addresses) */
-  ACCOUNT_BASED = 'account_based',
+  ACCOUNT_BASED = "account_based",
   /** Smart contract condition */
-  SMART_CONTRACT = 'smart_contract',
+  SMART_CONTRACT = "smart_contract",
   /** Custom condition */
-  CUSTOM = 'custom'
+  CUSTOM = "custom",
 }
 
 /**
@@ -124,19 +124,19 @@ export interface ProgressUpdate {
  */
 export enum OperationType {
   /** File upload operation */
-  UPLOAD = 'upload',
+  UPLOAD = "upload",
   /** File download operation */
-  DOWNLOAD = 'download',
+  DOWNLOAD = "download",
   /** Dataset creation operation */
-  DATASET_CREATION = 'dataset_creation',
+  DATASET_CREATION = "dataset_creation",
   /** Encryption operation */
-  ENCRYPTION = 'encryption',
+  ENCRYPTION = "encryption",
   /** Decryption operation */
-  DECRYPTION = 'decryption',
+  DECRYPTION = "decryption",
   /** Batch operation */
-  BATCH = 'batch',
+  BATCH = "batch",
   /** Custom operation */
-  CUSTOM = 'custom'
+  CUSTOM = "custom",
 }
 
 /**

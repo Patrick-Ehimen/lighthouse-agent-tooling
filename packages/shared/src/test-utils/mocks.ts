@@ -83,9 +83,7 @@ interface LighthouseError {
 /**
  * Mock factory for UploadResult
  */
-export const createMockUploadResult = (
-  overrides: Partial<UploadResult> = {}
-): UploadResult => ({
+export const createMockUploadResult = (overrides: Partial<UploadResult> = {}): UploadResult => ({
   cid: "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
   size: 1024,
   encrypted: false,
@@ -97,9 +95,7 @@ export const createMockUploadResult = (
 /**
  * Mock factory for Dataset
  */
-export const createMockDataset = (
-  overrides: Partial<Dataset> = {}
-): Dataset => ({
+export const createMockDataset = (overrides: Partial<Dataset> = {}): Dataset => ({
   id: "dataset-123",
   name: "Test Dataset",
   description: "A test dataset for unit testing",
@@ -119,7 +115,7 @@ export const createMockDataset = (
  * Mock factory for AccessCondition
  */
 export const createMockAccessCondition = (
-  overrides: Partial<AccessCondition> = {}
+  overrides: Partial<AccessCondition> = {},
 ): AccessCondition => ({
   type: "token_balance",
   condition: "balance",
@@ -132,7 +128,7 @@ export const createMockAccessCondition = (
  * Mock factory for ProgressUpdate
  */
 export const createMockProgressUpdate = (
-  overrides: Partial<ProgressUpdate> = {}
+  overrides: Partial<ProgressUpdate> = {},
 ): ProgressUpdate => ({
   operation: "upload",
   progress: 50,
@@ -145,9 +141,7 @@ export const createMockProgressUpdate = (
 /**
  * Mock factory for MCP Request
  */
-export const createMockMCPRequest = (
-  overrides: Partial<MCPRequest> = {}
-): MCPRequest => ({
+export const createMockMCPRequest = (overrides: Partial<MCPRequest> = {}): MCPRequest => ({
   id: "req-123",
   method: "lighthouse/upload",
   params: {
@@ -160,9 +154,7 @@ export const createMockMCPRequest = (
 /**
  * Mock factory for MCP Response
  */
-export const createMockMCPResponse = (
-  overrides: Partial<MCPResponse> = {}
-): MCPResponse => ({
+export const createMockMCPResponse = (overrides: Partial<MCPResponse> = {}): MCPResponse => ({
   id: "req-123",
   result: {
     success: true,
@@ -174,9 +166,7 @@ export const createMockMCPResponse = (
 /**
  * Mock factory for AuthConfig
  */
-export const createMockAuthConfig = (
-  overrides: Partial<AuthConfig> = {}
-): AuthConfig => ({
+export const createMockAuthConfig = (overrides: Partial<AuthConfig> = {}): AuthConfig => ({
   apiKey: "test-api-key-123",
   endpoint: "https://api.lighthouse.storage",
   timeout: 30000,
@@ -186,9 +176,7 @@ export const createMockAuthConfig = (
 /**
  * Mock factory for LighthouseError
  */
-export const createMockError = (
-  overrides: Partial<LighthouseError> = {}
-): LighthouseError => ({
+export const createMockError = (overrides: Partial<LighthouseError> = {}): LighthouseError => ({
   code: "TEST_ERROR",
   message: "Test error message",
   details: { test: true },
@@ -199,10 +187,7 @@ export const createMockError = (
 /**
  * Mock HTTP response factory
  */
-export const createMockHttpResponse = (
-  status: number = 200,
-  data: any = {}
-) => ({
+export const createMockHttpResponse = (status: number = 200, data: any = {}) => ({
   status,
   statusText: status === 200 ? "OK" : "Error",
   data,

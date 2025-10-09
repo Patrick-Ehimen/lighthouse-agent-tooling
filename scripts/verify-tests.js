@@ -39,10 +39,7 @@ if (fs.existsSync(jestSetupPath)) {
 }
 
 // Check if shared test utilities exist
-const testUtilsPath = path.join(
-  process.cwd(),
-  "packages/shared/src/test-utils/index.ts"
-);
+const testUtilsPath = path.join(process.cwd(), "packages/shared/src/test-utils/index.ts");
 if (fs.existsSync(testUtilsPath)) {
   console.log("✅ Shared test utilities found");
 } else {
@@ -58,7 +55,7 @@ try {
   const hasAllExports = expectedExports.every(
     (exportName) =>
       testUtilsContent.includes(`export * from './${exportName}'`) ||
-      testUtilsContent.includes(`export * from "./${exportName}"`)
+      testUtilsContent.includes(`export * from "./${exportName}"`),
   );
 
   if (hasAllExports) {
@@ -90,9 +87,7 @@ exampleTestPaths.forEach((testPath) => {
 if (exampleTestsFound === exampleTestPaths.length) {
   console.log("✅ All example test files found");
 } else {
-  console.log(
-    `⚠️  Found ${exampleTestsFound}/${exampleTestPaths.length} example test files`
-  );
+  console.log(`⚠️  Found ${exampleTestsFound}/${exampleTestPaths.length} example test files`);
 }
 
 // Verify package.json test scripts
@@ -124,7 +119,7 @@ if (packagesWithTestScripts === packagesWithTests.length) {
   console.log("✅ All packages have test scripts configured");
 } else {
   console.log(
-    `⚠️  ${packagesWithTestScripts}/${packagesWithTests.length} packages have test scripts`
+    `⚠️  ${packagesWithTestScripts}/${packagesWithTests.length} packages have test scripts`,
   );
 }
 
@@ -136,16 +131,12 @@ try {
     {
       stdio: "pipe",
       cwd: process.cwd(),
-    }
+    },
   );
   console.log("✅ Test execution works correctly");
 } catch (error) {
-  console.log(
-    "⚠️  Test execution had issues (this is expected if dependencies are not installed)"
-  );
-  console.log(
-    '   Run "npm install" to install dependencies before running tests'
-  );
+  console.log("⚠️  Test execution had issues (this is expected if dependencies are not installed)");
+  console.log('   Run "npm install" to install dependencies before running tests');
 }
 
 console.log("\n🎉 Jest Testing Framework Setup Verification Complete!");
