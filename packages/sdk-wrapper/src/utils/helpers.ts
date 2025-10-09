@@ -11,9 +11,7 @@ export function generateOperationId(): string {
 /**
  * Validate that a file exists and return its stats
  */
-export async function validateFile(
-  filePath: string
-): Promise<{ size: number; mtime: Date }> {
+export async function validateFile(filePath: string): Promise<{ size: number; mtime: Date }> {
   try {
     const stats = await fs.stat(filePath);
 
@@ -119,7 +117,7 @@ export function formatDuration(seconds: number): string {
 export async function retryWithBackoff<T>(
   fn: () => Promise<T>,
   maxRetries: number = 3,
-  baseDelay: number = 1000
+  baseDelay: number = 1000,
 ): Promise<T> {
   let lastError: Error;
 

@@ -120,13 +120,13 @@ export class AuthenticationManager extends EventEmitter {
         body: JSON.stringify({
           apiKey: this.config.apiKey,
         }),
-      }
+      },
     );
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        `Authentication failed: ${response.status} ${errorData.message || response.statusText}`
+        `Authentication failed: ${response.status} ${errorData.message || response.statusText}`,
       );
     }
 
@@ -162,10 +162,7 @@ export class AuthenticationManager extends EventEmitter {
   /**
    * Update internal auth state with new token data
    */
-  private updateAuthState(tokenData: {
-    accessToken: string;
-    expiresIn: number;
-  }): void {
+  private updateAuthState(tokenData: { accessToken: string; expiresIn: number }): void {
     const expiresAt = Date.now() + tokenData.expiresIn * 1000;
 
     this.authState = {

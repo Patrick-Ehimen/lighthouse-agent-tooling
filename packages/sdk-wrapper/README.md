@@ -136,20 +136,14 @@ The SDK emits various events for progress tracking and status updates:
 
 ```typescript
 sdk.on("upload:start", (event) => console.log("Upload started"));
-sdk.on("upload:progress", (event) =>
-  console.log("Upload progress:", event.data)
-);
+sdk.on("upload:progress", (event) => console.log("Upload progress:", event.data));
 sdk.on("upload:complete", (event) => console.log("Upload completed"));
 sdk.on("upload:error", (event) => console.error("Upload failed:", event.error));
 
 sdk.on("download:start", (event) => console.log("Download started"));
-sdk.on("download:progress", (event) =>
-  console.log("Download progress:", event.data)
-);
+sdk.on("download:progress", (event) => console.log("Download progress:", event.data));
 sdk.on("download:complete", (event) => console.log("Download completed"));
-sdk.on("download:error", (event) =>
-  console.error("Download failed:", event.error)
-);
+sdk.on("download:error", (event) => console.error("Download failed:", event.error));
 
 sdk.on("auth:refresh", () => console.log("Token refreshed"));
 sdk.on("auth:error", (error) => console.error("Auth error:", error));

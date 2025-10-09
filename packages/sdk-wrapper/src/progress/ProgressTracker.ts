@@ -10,11 +10,7 @@ export class ProgressTracker extends EventEmitter {
   /**
    * Start tracking a new operation
    */
-  startOperation(
-    operationId: string,
-    type: "upload" | "download",
-    totalSize?: number
-  ): void {
+  startOperation(operationId: string, type: "upload" | "download", totalSize?: number): void {
     const operation: OperationProgress = {
       id: operationId,
       type,
@@ -33,11 +29,7 @@ export class ProgressTracker extends EventEmitter {
   /**
    * Update progress for an operation
    */
-  updateProgress(
-    operationId: string,
-    loaded: number,
-    phase?: ProgressInfo["phase"]
-  ): void {
+  updateProgress(operationId: string, loaded: number, phase?: ProgressInfo["phase"]): void {
     const operation = this.operations.get(operationId);
     if (!operation) {
       return;
@@ -61,11 +53,7 @@ export class ProgressTracker extends EventEmitter {
 
     const progressInfo = this.calculateProgressInfo(operation);
 
-    this.emitEvent(
-      `${operation.type}:progress` as SDKEventType,
-      operationId,
-      progressInfo
-    );
+    this.emitEvent(`${operation.type}:progress` as SDKEventType, operationId, progressInfo);
   }
 
   /**
@@ -97,12 +85,7 @@ export class ProgressTracker extends EventEmitter {
       return;
     }
 
-    this.emitEvent(
-      `${operation.type}:error` as SDKEventType,
-      operationId,
-      undefined,
-      error
-    );
+    this.emitEvent(`${operation.type}:error` as SDKEventType, operationId, undefined, error);
 
     this.operations.delete(operationId);
   }
@@ -139,7 +122,7 @@ export class ProgressTracker extends EventEmitter {
       `${operation.type}:error` as SDKEventType,
       operationId,
       undefined,
-      new Error("Operation cancelled")
+      new Error("Operation cancelled"),
     );
 
     this.operations.delete(operationId);
@@ -172,12 +155,7 @@ export class ProgressTracker extends EventEmitter {
   /**
    * Emit SDK event
    */
-  private emitEvent(
-    type: SDKEventType,
-    operationId: string,
-    data?: any,
-    error?: Error
-  ): void {
+  private emitEvent(type: SDKEventType, operationId: string, data?: any, error?: Error): void {
     const event: SDKEvent = {
       type,
       operationId,
@@ -193,9 +171,7 @@ export class ProgressTracker extends EventEmitter {
   /**
    * Create a progress callback function for an operation
    */
-  createProgressCallback(
-    operationId: string
-  ): (loaded: number, total?: number) => void {
+  createProgressCallback(operationId: string): (loaded: number, total?: number) => void {
     return (loaded: number, total?: number) => {
       const operation = this.operations.get(operationId);
       if (operation && total && !operation.totalSize) {

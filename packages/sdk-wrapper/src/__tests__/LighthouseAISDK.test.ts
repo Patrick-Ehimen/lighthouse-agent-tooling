@@ -130,7 +130,7 @@ describe("LighthouseAISDK", () => {
         "test-token",
         false,
         undefined,
-        expect.any(Function)
+        expect.any(Function),
       );
     });
 
@@ -141,9 +141,7 @@ describe("LighthouseAISDK", () => {
         code: "ENOENT",
       });
 
-      await expect(sdk.uploadFile("/nonexistent/file.txt")).rejects.toThrow(
-        "File not found"
-      );
+      await expect(sdk.uploadFile("/nonexistent/file.txt")).rejects.toThrow("File not found");
     });
 
     it("should emit progress events during upload", async () => {
@@ -156,19 +154,17 @@ describe("LighthouseAISDK", () => {
         mtime: new Date(),
       });
 
-      lighthouse.upload.mockImplementation(
-        (path, token, deal, end, progressCallback) => {
-          // Simulate progress updates synchronously
-          if (progressCallback) {
-            progressCallback({ loaded: 512, total: 1024 });
-            progressCallback({ loaded: 1024, total: 1024 });
-          }
-
-          return Promise.resolve({
-            data: { Hash: "QmTestHash123", Size: 1024 },
-          });
+      lighthouse.upload.mockImplementation((path, token, deal, end, progressCallback) => {
+        // Simulate progress updates synchronously
+        if (progressCallback) {
+          progressCallback({ loaded: 512, total: 1024 });
+          progressCallback({ loaded: 1024, total: 1024 });
         }
-      );
+
+        return Promise.resolve({
+          data: { Hash: "QmTestHash123", Size: 1024 },
+        });
+      });
 
       const progressEvents: any[] = [];
       sdk.on("upload:progress", (event) => progressEvents.push(event));
