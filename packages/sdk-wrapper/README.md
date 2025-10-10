@@ -198,19 +198,68 @@ interface DownloadOptions {
 
 ## Error Handling
 
-The SDK provides comprehensive error handling with automatic retry logic for transient failures:
+The SDK provides comprehensive error handling with intelligent error classification, automatic retry logic, and circuit breaker protection:
+
+### Error Types
+
+- **NetworkError**: Connection issues, DNS failures (retryable)
+- **AuthenticationError**: Invalid credentials, expired tokens (not retryable)
+- **RateLimitError**: API rate limits exceeded (retryable with backoff)
+- **TimeoutError**: Request timeouts (retryable)
+- **ValidationError**: Invalid input parameters (not retryable)
+- **FileNotFoundError**: Requested file doesn't exist (not retryable)
+- **InsufficientStorageError**: Storage quota exceeded (not retryable)
+
+### Retry Logic
 
 ```typescript
+import { NetworkError, RateLimitError } from "@lighthouse-tooling/sdk-wrapper";
+
 try {
   const fileInfo = await sdk.uploadFile("./large-file.zip");
   console.log("Upload successful:", fileInfo.hash);
 } catch (error) {
-  if (error.message.includes("network")) {
-    console.log("Network error - will retry automatically");
+  if (error instanceof NetworkError) {
+    console.log("Network error - automatically retried with exponential backoff");
+  } else if (error instanceof RateLimitError) {
+    console.log(`Rate limited - retry after ${error.retryAfter}ms`);
   } else {
     console.error("Upload failed:", error.message);
   }
 }
+```
+
+### Circuit Breaker
+
+The SDK includes circuit breaker protection to prevent cascading failures:
+
+```typescript
+// Monitor circuit breaker events
+sdk.on("circuit:open", (event) => {
+  console.log("Circuit breaker opened for:", event.operationName);
+});
+
+sdk.on("circuit:closed", (event) => {
+  console.log("Circuit breaker closed for:", event.operationName);
+});
+
+// Get circuit breaker status
+const status = sdk.getCircuitBreakerStatus();
+console.log("Circuit state:", status.state);
+```
+
+### Error Metrics
+
+```typescript
+// Get error metrics for monitoring
+const metrics = sdk.getErrorMetrics();
+console.log("Total errors:", metrics.totalErrors);
+console.log("Errors by type:", metrics.errorsByType);
+console.log("Retry attempts:", metrics.retryAttempts);
+console.log("Successful retries:", metrics.successfulRetries);
+
+// Reset metrics
+sdk.resetErrorMetrics();
 ```
 
 ## Development

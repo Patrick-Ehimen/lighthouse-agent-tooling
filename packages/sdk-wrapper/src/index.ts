@@ -13,6 +13,21 @@ export { LighthouseAISDK } from "./LighthouseAISDK";
 export { AuthenticationManager } from "./auth/AuthenticationManager";
 export { ProgressTracker } from "./progress/ProgressTracker";
 
+// Error handling system
+export {
+  ErrorHandler,
+  CircuitBreaker,
+  CircuitState,
+  LighthouseError,
+  NetworkError,
+  AuthenticationError,
+  RateLimitError,
+  TimeoutError,
+  ValidationError,
+  FileNotFoundError,
+  InsufficientStorageError,
+} from "./errors";
+
 // Types and interfaces
 export type {
   LighthouseConfig,
@@ -25,6 +40,9 @@ export type {
   SDKEventType,
   SDKEvent,
 } from "./types";
+
+// Error handling types
+export type { RetryPolicy, ErrorMetrics, CircuitBreakerConfig } from "./errors/types";
 
 // Utility functions
 export {
