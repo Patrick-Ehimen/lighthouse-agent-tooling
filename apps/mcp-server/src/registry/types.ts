@@ -2,7 +2,7 @@
  * Tool Registry specific types
  */
 
-import { MCPToolDefinition } from '@lighthouse-tooling/types';
+import { MCPToolDefinition } from "@lighthouse-tooling/types";
 
 /**
  * Registered tool with executor function
@@ -59,4 +59,3 @@ export interface ToolRegistrationOptions {
   override?: boolean;
   validateSchema?: boolean;
 }
-

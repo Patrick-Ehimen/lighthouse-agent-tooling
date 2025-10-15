@@ -2,7 +2,13 @@
  * Response Builder - Formats MCP responses
  */
 
-import { MCPResponse, MCPResult, MCPError, MCPErrorCode, MCPContent } from '@lighthouse-tooling/types';
+import {
+  MCPResponse,
+  MCPResult,
+  MCPError,
+  MCPErrorCode,
+  MCPContent,
+} from "@lighthouse-tooling/types";
 
 export class ResponseBuilder {
   /**
@@ -10,7 +16,7 @@ export class ResponseBuilder {
    */
   static success(id: string | number, result: MCPResult): MCPResponse {
     return {
-      jsonrpc: '2.0',
+      jsonrpc: "2.0",
       id,
       result,
     };
@@ -19,7 +25,12 @@ export class ResponseBuilder {
   /**
    * Build an error response
    */
-  static error(id: string | number, code: MCPErrorCode, message: string, data?: Record<string, unknown>): MCPResponse {
+  static error(
+    id: string | number,
+    code: MCPErrorCode,
+    message: string,
+    data?: Record<string, unknown>,
+  ): MCPResponse {
     const error: MCPError = {
       code,
       message,
@@ -27,7 +38,7 @@ export class ResponseBuilder {
     };
 
     return {
-      jsonrpc: '2.0',
+      jsonrpc: "2.0",
       id,
       error,
     };
@@ -45,10 +56,13 @@ export class ResponseBuilder {
   /**
    * Build a tool call result response
    */
-  static toolCallResult(id: string | number, content: string | MCPContent[], metadata?: Record<string, unknown>): MCPResponse {
-    const contentArray: MCPContent[] = typeof content === 'string'
-      ? [{ type: 'text', text: content }]
-      : content;
+  static toolCallResult(
+    id: string | number,
+    content: string | MCPContent[],
+    metadata?: Record<string, unknown>,
+  ): MCPResponse {
+    const contentArray: MCPContent[] =
+      typeof content === "string" ? [{ type: "text", text: content }] : content;
 
     return this.success(id, {
       content: contentArray,
@@ -63,7 +77,7 @@ export class ResponseBuilder {
     return this.success(id, {
       content: [
         {
-          type: 'text',
+          type: "text",
           text: JSON.stringify(resources, null, 2),
         },
       ],
@@ -76,19 +90,19 @@ export class ResponseBuilder {
   static errorToMCPCode(error: Error): MCPErrorCode {
     const message = error.message.toLowerCase();
 
-    if (message.includes('not found')) {
+    if (message.includes("not found")) {
       return MCPErrorCode.RESOURCE_NOT_FOUND;
     }
 
-    if (message.includes('invalid') || message.includes('validation')) {
+    if (message.includes("invalid") || message.includes("validation")) {
       return MCPErrorCode.INVALID_PARAMS;
     }
 
-    if (message.includes('auth') || message.includes('permission')) {
+    if (message.includes("auth") || message.includes("permission")) {
       return MCPErrorCode.AUTH_REQUIRED;
     }
 
-    if (message.includes('timeout')) {
+    if (message.includes("timeout")) {
       return MCPErrorCode.SERVER_ERROR;
     }
 
@@ -110,18 +124,17 @@ export class ResponseBuilder {
    * Format data as MCP content
    */
   static formatContent(data: unknown): MCPContent[] {
-    if (typeof data === 'string') {
-      return [{ type: 'text', text: data }];
+    if (typeof data === "string") {
+      return [{ type: "text", text: data }];
     }
 
     // Convert objects to JSON
     return [
       {
-        type: 'text',
+        type: "text",
         text: JSON.stringify(data, null, 2),
-        mimeType: 'application/json',
+        mimeType: "application/json",
       },
     ];
   }
 }
-

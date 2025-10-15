@@ -5,7 +5,7 @@
 export interface ServerConfig {
   name: string;
   version: string;
-  logLevel: 'debug' | 'info' | 'warn' | 'error';
+  logLevel: "debug" | "info" | "warn" | "error";
   maxStorageSize: number;
   port?: number;
   enableMetrics: boolean;
@@ -13,11 +13,10 @@ export interface ServerConfig {
 }
 
 export const DEFAULT_SERVER_CONFIG: ServerConfig = {
-  name: 'lighthouse-storage',
-  version: '0.1.0',
-  logLevel: 'info',
+  name: "lighthouse-storage",
+  version: "0.1.0",
+  logLevel: "info",
   maxStorageSize: 1024 * 1024 * 1024, // 1GB
   enableMetrics: true,
   metricsInterval: 60000, // 1 minute
 };
-

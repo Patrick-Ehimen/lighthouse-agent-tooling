@@ -2,26 +2,26 @@
  * Lighthouse MCP Server - Main server implementation
  */
 
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
   ListResourcesRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
-import { Logger } from '@lighthouse-tooling/shared';
-import { LIGHTHOUSE_MCP_TOOLS } from '@lighthouse-tooling/types';
+} from "@modelcontextprotocol/sdk/types.js";
+import { Logger } from "@lighthouse-tooling/shared";
+import { LIGHTHOUSE_MCP_TOOLS } from "@lighthouse-tooling/types";
 
-import { ToolRegistry } from './registry/ToolRegistry.js';
-import { MockLighthouseService } from './services/MockLighthouseService.js';
-import { MockDatasetService } from './services/MockDatasetService.js';
+import { ToolRegistry } from "./registry/ToolRegistry.js";
+import { MockLighthouseService } from "./services/MockLighthouseService.js";
+import { MockDatasetService } from "./services/MockDatasetService.js";
 import {
   ListToolsHandler,
   CallToolHandler,
   ListResourcesHandler,
   InitializeHandler,
-} from './handlers/index.js';
-import { ServerConfig, DEFAULT_SERVER_CONFIG } from './config/server-config.js';
+} from "./handlers/index.js";
+import { ServerConfig, DEFAULT_SERVER_CONFIG } from "./config/server-config.js";
 
 export class LighthouseMCPServer {
   private server: Server;
@@ -43,7 +43,7 @@ export class LighthouseMCPServer {
     // Initialize logger
     this.logger = Logger.getInstance({
       level: this.config.logLevel,
-      component: 'LighthouseMCPServer',
+      component: "LighthouseMCPServer",
     });
 
     // Initialize server
@@ -57,7 +57,7 @@ export class LighthouseMCPServer {
           tools: {},
           resources: {},
         },
-      }
+      },
     );
 
     // Initialize services
@@ -73,17 +73,17 @@ export class LighthouseMCPServer {
     this.listResourcesHandler = new ListResourcesHandler(
       this.lighthouseService,
       this.datasetService,
-      this.logger
+      this.logger,
     );
     this.initializeHandler = new InitializeHandler(
       {
         name: this.config.name,
         version: this.config.version,
       },
-      this.logger
+      this.logger,
     );
 
-    this.logger.info('Lighthouse MCP Server created', {
+    this.logger.info("Lighthouse MCP Server created", {
       name: this.config.name,
       version: this.config.version,
     });
@@ -95,83 +95,74 @@ export class LighthouseMCPServer {
    */
   async registerTools(): Promise<void> {
     const startTime = Date.now();
-    this.logger.info('Registering tools...');
+    this.logger.info("Registering tools...");
 
     // Register lighthouse_upload_file tool
-    const uploadTool = LIGHTHOUSE_MCP_TOOLS.find(t => t.name === 'lighthouse_upload_file');
-    if (!uploadTool) throw new Error('Upload tool not found');
-    
-    this.registry.register(
-      uploadTool,
-      async (args) => {
-        const result = await this.lighthouseService.uploadFile({
-          filePath: args.filePath as string,
-          encrypt: args.encrypt as boolean | undefined,
-          accessConditions: args.accessConditions as any[] | undefined,
-          tags: args.tags as string[] | undefined,
-        });
+    const uploadTool = LIGHTHOUSE_MCP_TOOLS.find((t) => t.name === "lighthouse_upload_file");
+    if (!uploadTool) throw new Error("Upload tool not found");
 
-        return {
-          success: true,
-          data: result,
-          executionTime: 0,
-        };
-      }
-    );
+    this.registry.register(uploadTool, async (args) => {
+      const result = await this.lighthouseService.uploadFile({
+        filePath: args.filePath as string,
+        encrypt: args.encrypt as boolean | undefined,
+        accessConditions: args.accessConditions as any[] | undefined,
+        tags: args.tags as string[] | undefined,
+      });
+
+      return {
+        success: true,
+        data: result,
+        executionTime: 0,
+      };
+    });
 
     // Register lighthouse_create_dataset tool
-    const datasetTool = LIGHTHOUSE_MCP_TOOLS.find(t => t.name === 'lighthouse_create_dataset');
-    if (!datasetTool) throw new Error('Dataset tool not found');
-    
-    this.registry.register(
-      datasetTool,
-      async (args) => {
-        const result = await this.datasetService.createDataset({
-          name: args.name as string,
-          description: args.description as string | undefined,
-          files: args.files as string[],
-          metadata: args.metadata as Record<string, unknown> | undefined,
-          encrypt: args.encrypt as boolean | undefined,
-        });
+    const datasetTool = LIGHTHOUSE_MCP_TOOLS.find((t) => t.name === "lighthouse_create_dataset");
+    if (!datasetTool) throw new Error("Dataset tool not found");
 
-        return {
-          success: true,
-          data: result,
-          executionTime: 0,
-        };
-      }
-    );
+    this.registry.register(datasetTool, async (args) => {
+      const result = await this.datasetService.createDataset({
+        name: args.name as string,
+        description: args.description as string | undefined,
+        files: args.files as string[],
+        metadata: args.metadata as Record<string, unknown> | undefined,
+        encrypt: args.encrypt as boolean | undefined,
+      });
+
+      return {
+        success: true,
+        data: result,
+        executionTime: 0,
+      };
+    });
 
     // Register lighthouse_fetch_file tool
-    const fetchTool = LIGHTHOUSE_MCP_TOOLS.find(t => t.name === 'lighthouse_fetch_file');
-    if (!fetchTool) throw new Error('Fetch tool not found');
-    
-    this.registry.register(
-      fetchTool,
-      async (args) => {
-        const result = await this.lighthouseService.fetchFile({
-          cid: args.cid as string,
-          outputPath: args.outputPath as string | undefined,
-          decrypt: args.decrypt as boolean | undefined,
-        });
+    const fetchTool = LIGHTHOUSE_MCP_TOOLS.find((t) => t.name === "lighthouse_fetch_file");
+    if (!fetchTool) throw new Error("Fetch tool not found");
 
-        return {
-          success: true,
-          data: result,
-          executionTime: 0,
-        };
-      }
-    );
+    this.registry.register(fetchTool, async (args) => {
+      const result = await this.lighthouseService.fetchFile({
+        cid: args.cid as string,
+        outputPath: args.outputPath as string | undefined,
+        decrypt: args.decrypt as boolean | undefined,
+      });
+
+      return {
+        success: true,
+        data: result,
+        executionTime: 0,
+      };
+    });
 
     const registrationTime = Date.now() - startTime;
-    this.logger.info('All tools registered', {
+    this.logger.info("All tools registered", {
       toolCount: LIGHTHOUSE_MCP_TOOLS.length,
       registrationTime,
     });
 
     // Check if registration time exceeds threshold
     if (registrationTime > 100) {
-      this.logger.warn('Tool registration exceeded 100ms threshold', {
+      this.logger.warn("Tool registration exceeded 100ms threshold", {
         registrationTime,
       });
     }
@@ -181,7 +172,7 @@ export class LighthouseMCPServer {
    * Setup request handlers
    */
   private setupHandlers(): void {
-    this.logger.info('Setting up request handlers...');
+    this.logger.info("Setting up request handlers...");
 
     // Handle ListTools
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -192,22 +183,19 @@ export class LighthouseMCPServer {
     // Handle CallTool
     this.server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
       const { name, arguments: args } = request.params;
-      const result = await this.registry.executeTool(
-        name,
-        (args as Record<string, unknown>) || {}
-      );
+      const result = await this.registry.executeTool(name, (args as Record<string, unknown>) || {});
 
       if (!result.success) {
-        throw new Error(result.error || 'Tool execution failed');
+        throw new Error(result.error || "Tool execution failed");
       }
 
       return {
         content: [
           {
-            type: 'text' as const,
+            type: "text" as const,
             text: JSON.stringify(result.data, null, 2),
-          }
-        ]
+          },
+        ],
       };
     });
 
@@ -221,20 +209,20 @@ export class LighthouseMCPServer {
           uri: `lighthouse://file/${file.cid}`,
           name: file.filePath,
           description: `Uploaded file: ${file.filePath}`,
-          mimeType: 'application/octet-stream',
+          mimeType: "application/octet-stream",
         })),
         ...datasets.map((dataset) => ({
           uri: `lighthouse://dataset/${dataset.id}`,
           name: dataset.name,
           description: dataset.description || `Dataset: ${dataset.name}`,
-          mimeType: 'application/json',
+          mimeType: "application/json",
         })),
       ];
 
       return { resources };
     });
 
-    this.logger.info('Request handlers setup complete');
+    this.logger.info("Request handlers setup complete");
   }
 
   /**
@@ -244,7 +232,7 @@ export class LighthouseMCPServer {
     const startTime = Date.now();
 
     try {
-      this.logger.info('Starting Lighthouse MCP Server...', {
+      this.logger.info("Starting Lighthouse MCP Server...", {
         name: this.config.name,
         version: this.config.version,
       });
@@ -265,19 +253,19 @@ export class LighthouseMCPServer {
       await this.server.connect(transport);
 
       const startupTime = Date.now() - startTime;
-      this.logger.info('Lighthouse MCP Server started successfully', {
+      this.logger.info("Lighthouse MCP Server started successfully", {
         startupTime,
         toolCount: this.registry.listTools().length,
       });
 
       // Check if startup time exceeds threshold
       if (startupTime > 2000) {
-        this.logger.warn('Server startup exceeded 2s threshold', {
+        this.logger.warn("Server startup exceeded 2s threshold", {
           startupTime,
         });
       }
     } catch (error) {
-      this.logger.error('Failed to start server', error as Error);
+      this.logger.error("Failed to start server", error as Error);
       throw error;
     }
   }
@@ -291,14 +279,14 @@ export class LighthouseMCPServer {
       const storageStats = this.lighthouseService.getStorageStats();
       const datasetStats = this.datasetService.getAllStats();
 
-      this.logger.info('Server metrics', {
+      this.logger.info("Server metrics", {
         registry: registryMetrics,
         storage: storageStats,
         datasets: datasetStats,
       });
     }, this.config.metricsInterval);
 
-    this.logger.info('Metrics collection started', {
+    this.logger.info("Metrics collection started", {
       interval: this.config.metricsInterval,
     });
   }
@@ -308,11 +296,11 @@ export class LighthouseMCPServer {
    */
   async stop(): Promise<void> {
     try {
-      this.logger.info('Stopping server...');
+      this.logger.info("Stopping server...");
       await this.server.close();
-      this.logger.info('Server stopped successfully');
+      this.logger.info("Server stopped successfully");
     } catch (error) {
-      this.logger.error('Error stopping server', error as Error);
+      this.logger.error("Error stopping server", error as Error);
       throw error;
     }
   }
@@ -353,4 +341,3 @@ export class LighthouseMCPServer {
     return this.datasetService;
   }
 }
-

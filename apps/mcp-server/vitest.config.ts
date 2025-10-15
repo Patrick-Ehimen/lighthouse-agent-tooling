@@ -1,30 +1,30 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
     globals: true,
-    environment: 'node',
-    setupFiles: ['./src/tests/setup.ts'],
+    environment: "node",
+    setupFiles: ["./src/tests/setup.ts"],
     // Run tests sequentially to avoid file system race conditions
-    pool: 'forks',
+    pool: "forks",
     poolOptions: {
       forks: {
         singleFork: true,
       },
     },
     coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      provider: "v8",
+      reporter: ["text", "json", "html"],
       exclude: [
-        'node_modules/',
-        'dist/',
-        '**/*.test.ts',
-        '**/*.spec.ts',
-        '**/types.ts',
-        '**/test-helpers.ts',
-        '**/setup.ts',
-        'src/index.ts', // CLI entry point - tested manually
-        '**/*.js', // Exclude any JS files (like demo-test.js)
+        "node_modules/",
+        "dist/",
+        "**/*.test.ts",
+        "**/*.spec.ts",
+        "**/types.ts",
+        "**/test-helpers.ts",
+        "**/setup.ts",
+        "src/index.ts", // CLI entry point - tested manually
+        "**/*.js", // Exclude any JS files (like demo-test.js)
       ],
       thresholds: {
         lines: 85,
@@ -37,4 +37,3 @@ export default defineConfig({
     },
   },
 });
-

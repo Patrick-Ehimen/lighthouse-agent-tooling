@@ -2,8 +2,8 @@
  * Test helpers and utilities
  */
 
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import * as fs from "fs/promises";
+import * as path from "path";
 
 // Track created directories for proper cleanup
 const createdDirs = new Set<string>();
@@ -13,13 +13,13 @@ const createdDirs = new Set<string>();
  */
 export async function createTestFile(
   filename: string,
-  content: string = 'test content'
+  content: string = "test content",
 ): Promise<string> {
   // Use unique temp directory per test execution to avoid race conditions
   const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
-  const tempDir = path.join(process.cwd(), 'test-temp', uniqueId);
+  const tempDir = path.join(process.cwd(), "test-temp", uniqueId);
   await fs.mkdir(tempDir, { recursive: true });
-  
+
   // Track this directory for cleanup
   createdDirs.add(tempDir);
 
@@ -33,7 +33,7 @@ export async function createTestFile(
  * Clean up all temporary test files at once
  */
 export async function cleanupTestFiles(): Promise<void> {
-  const tempDir = path.join(process.cwd(), 'test-temp');
+  const tempDir = path.join(process.cwd(), "test-temp");
   try {
     // Clean up at the end, not during tests
     await fs.rm(tempDir, { recursive: true, force: true });
@@ -62,4 +62,3 @@ export function createMockLogger() {
     time: <T>(operation: string, fn: () => T | Promise<T>) => fn(),
   };
 }
-

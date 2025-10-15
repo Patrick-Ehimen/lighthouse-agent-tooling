@@ -2,8 +2,8 @@
  * Tool Registry - Manages registration and discovery of MCP tools
  */
 
-import { MCPToolDefinition } from '@lighthouse-tooling/types';
-import { Logger } from '@lighthouse-tooling/shared';
+import { MCPToolDefinition } from "@lighthouse-tooling/types";
+import { Logger } from "@lighthouse-tooling/shared";
 import {
   RegisteredTool,
   ToolExecutor,
@@ -11,7 +11,7 @@ import {
   RegistryMetrics,
   ToolRegistrationOptions,
   ToolExecutionResult,
-} from './types.js';
+} from "./types.js";
 
 export class ToolRegistry {
   private tools: Map<string, RegisteredTool> = new Map();
@@ -19,9 +19,9 @@ export class ToolRegistry {
   private registrationStartTime: number;
 
   constructor(logger?: Logger) {
-    this.logger = logger || Logger.getInstance({ level: 'info', component: 'ToolRegistry' });
+    this.logger = logger || Logger.getInstance({ level: "info", component: "ToolRegistry" });
     this.registrationStartTime = Date.now();
-    this.logger.info('Tool Registry initialized');
+    this.logger.info("Tool Registry initialized");
   }
 
   /**
@@ -30,7 +30,7 @@ export class ToolRegistry {
   register(
     tool: MCPToolDefinition,
     executor: ToolExecutor,
-    options: ToolRegistrationOptions = {}
+    options: ToolRegistrationOptions = {},
   ): void {
     const startTime = Date.now();
 
@@ -135,7 +135,7 @@ export class ToolRegistry {
       }
 
       if (filter.namePattern) {
-        const pattern = new RegExp(filter.namePattern, 'i');
+        const pattern = new RegExp(filter.namePattern, "i");
         tools = tools.filter((t) => pattern.test(t.name));
       }
     }
@@ -206,11 +206,11 @@ export class ToolRegistry {
   getMetrics(): RegistryMetrics {
     const totalCalls = Array.from(this.tools.values()).reduce(
       (sum, tool) => sum + tool.callCount,
-      0
+      0,
     );
 
     const registrationTimes = Array.from(this.tools.values()).map(
-      (tool) => tool.registeredAt.getTime() - this.registrationStartTime
+      (tool) => tool.registeredAt.getTime() - this.registrationStartTime,
     );
 
     const averageRegistrationTime =
@@ -250,11 +250,13 @@ export class ToolRegistry {
   /**
    * Get tool statistics
    */
-  getToolStats(name: string): {
-    callCount: number;
-    averageExecutionTime: number;
-    lastCalled?: Date;
-  } | undefined {
+  getToolStats(name: string):
+    | {
+        callCount: number;
+        averageExecutionTime: number;
+        lastCalled?: Date;
+      }
+    | undefined {
     const tool = this.tools.get(name);
     if (!tool) return undefined;
 
@@ -265,4 +267,3 @@ export class ToolRegistry {
     };
   }
 }
-

@@ -2,8 +2,8 @@
  * Request Validator - Validates MCP requests and tool parameters
  */
 
-import { MCPToolDefinition, MCPToolInputSchema } from '@lighthouse-tooling/types';
-import { Validator } from '@lighthouse-tooling/shared';
+import { MCPToolDefinition, MCPToolInputSchema } from "@lighthouse-tooling/types";
+import { Validator } from "@lighthouse-tooling/shared";
 
 export interface ValidationError {
   field: string;
@@ -17,7 +17,7 @@ export class RequestValidator {
    */
   static validateToolArguments(
     toolDefinition: MCPToolDefinition,
-    args: Record<string, unknown>
+    args: Record<string, unknown>,
   ): { valid: boolean; errors: ValidationError[] } {
     const errors: ValidationError[] = [];
     const schema = toolDefinition.inputSchema;
@@ -25,7 +25,11 @@ export class RequestValidator {
     // Check required fields
     if (schema.required) {
       for (const requiredField of schema.required) {
-        if (!(requiredField in args) || args[requiredField] === undefined || args[requiredField] === null) {
+        if (
+          !(requiredField in args) ||
+          args[requiredField] === undefined ||
+          args[requiredField] === null
+        ) {
           errors.push({
             field: requiredField,
             message: `Required field '${requiredField}' is missing`,
@@ -64,11 +68,7 @@ export class RequestValidator {
   /**
    * Validate value type
    */
-  private static validateType(
-    fieldName: string,
-    value: unknown,
-    schema: any
-  ): ValidationError[] {
+  private static validateType(fieldName: string, value: unknown, schema: any): ValidationError[] {
     const errors: ValidationError[] = [];
 
     if (value === undefined || value === null) {
@@ -76,8 +76,8 @@ export class RequestValidator {
     }
 
     switch (schema.type) {
-      case 'string':
-        if (typeof value !== 'string') {
+      case "string":
+        if (typeof value !== "string") {
           errors.push({
             field: fieldName,
             message: `Field '${fieldName}' must be a string`,
@@ -102,15 +102,15 @@ export class RequestValidator {
           if (schema.enum && !schema.enum.includes(value)) {
             errors.push({
               field: fieldName,
-              message: `Field '${fieldName}' must be one of: ${schema.enum.join(', ')}`,
+              message: `Field '${fieldName}' must be one of: ${schema.enum.join(", ")}`,
               value,
             });
           }
         }
         break;
 
-      case 'number':
-        if (typeof value !== 'number') {
+      case "number":
+        if (typeof value !== "number") {
           errors.push({
             field: fieldName,
             message: `Field '${fieldName}' must be a number`,
@@ -134,8 +134,8 @@ export class RequestValidator {
         }
         break;
 
-      case 'boolean':
-        if (typeof value !== 'boolean') {
+      case "boolean":
+        if (typeof value !== "boolean") {
           errors.push({
             field: fieldName,
             message: `Field '${fieldName}' must be a boolean`,
@@ -144,7 +144,7 @@ export class RequestValidator {
         }
         break;
 
-      case 'array':
+      case "array":
         if (!Array.isArray(value)) {
           errors.push({
             field: fieldName,
@@ -160,8 +160,8 @@ export class RequestValidator {
         }
         break;
 
-      case 'object':
-        if (typeof value !== 'object' || Array.isArray(value)) {
+      case "object":
+        if (typeof value !== "object" || Array.isArray(value)) {
           errors.push({
             field: fieldName,
             message: `Field '${fieldName}' must be an object`,
@@ -173,7 +173,11 @@ export class RequestValidator {
           for (const [propKey, propValue] of Object.entries(objValue)) {
             const propSchema = schema.properties[propKey];
             if (propSchema) {
-              const propErrors = this.validateType(`${fieldName}.${propKey}`, propValue, propSchema);
+              const propErrors = this.validateType(
+                `${fieldName}.${propKey}`,
+                propValue,
+                propSchema,
+              );
               errors.push(...propErrors);
             }
           }
@@ -188,8 +192,8 @@ export class RequestValidator {
    * Validate file path parameter
    */
   static validateFilePath(filePath: unknown): { valid: boolean; error?: string } {
-    if (typeof filePath !== 'string') {
-      return { valid: false, error: 'File path must be a string' };
+    if (typeof filePath !== "string") {
+      return { valid: false, error: "File path must be a string" };
     }
 
     const result = Validator.validateFilePath(filePath);
@@ -203,8 +207,8 @@ export class RequestValidator {
    * Validate CID parameter
    */
   static validateCID(cid: unknown): { valid: boolean; error?: string } {
-    if (typeof cid !== 'string') {
-      return { valid: false, error: 'CID must be a string' };
+    if (typeof cid !== "string") {
+      return { valid: false, error: "CID must be a string" };
     }
 
     const result = Validator.validateCID(cid);
@@ -221,4 +225,3 @@ export class RequestValidator {
     return Validator.sanitizeInput(data);
   }
 }
-

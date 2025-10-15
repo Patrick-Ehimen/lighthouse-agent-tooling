@@ -2,11 +2,11 @@
  * ListResourcesHandler - Handles resources/list requests
  */
 
-import { Logger } from '@lighthouse-tooling/shared';
-import { MCPResponse } from '@lighthouse-tooling/types';
-import { ResponseBuilder } from '../utils/response-builder.js';
-import { MockLighthouseService } from '../services/MockLighthouseService.js';
-import { MockDatasetService } from '../services/MockDatasetService.js';
+import { Logger } from "@lighthouse-tooling/shared";
+import { MCPResponse } from "@lighthouse-tooling/types";
+import { ResponseBuilder } from "../utils/response-builder.js";
+import { MockLighthouseService } from "../services/MockLighthouseService.js";
+import { MockDatasetService } from "../services/MockDatasetService.js";
 
 export class ListResourcesHandler {
   private lighthouseService: MockLighthouseService;
@@ -16,11 +16,12 @@ export class ListResourcesHandler {
   constructor(
     lighthouseService: MockLighthouseService,
     datasetService: MockDatasetService,
-    logger?: Logger
+    logger?: Logger,
   ) {
     this.lighthouseService = lighthouseService;
     this.datasetService = datasetService;
-    this.logger = logger || Logger.getInstance({ level: 'info', component: 'ListResourcesHandler' });
+    this.logger =
+      logger || Logger.getInstance({ level: "info", component: "ListResourcesHandler" });
   }
 
   /**
@@ -28,7 +29,7 @@ export class ListResourcesHandler {
    */
   async handle(requestId: string | number): Promise<MCPResponse> {
     try {
-      this.logger.info('Handling resources/list request', { requestId });
+      this.logger.info("Handling resources/list request", { requestId });
 
       // Get all uploaded files
       const files = this.lighthouseService.listFiles();
@@ -42,7 +43,7 @@ export class ListResourcesHandler {
           uri: `lighthouse://file/${file.cid}`,
           name: file.filePath,
           description: `Uploaded file: ${file.filePath}`,
-          mimeType: 'application/octet-stream',
+          mimeType: "application/octet-stream",
           metadata: {
             cid: file.cid,
             size: file.size,
@@ -55,7 +56,7 @@ export class ListResourcesHandler {
           uri: `lighthouse://dataset/${dataset.id}`,
           name: dataset.name,
           description: dataset.description || `Dataset: ${dataset.name}`,
-          mimeType: 'application/json',
+          mimeType: "application/json",
           metadata: {
             id: dataset.id,
             fileCount: dataset.files.length,
@@ -66,7 +67,7 @@ export class ListResourcesHandler {
         })),
       ];
 
-      this.logger.info('Resources list returned', {
+      this.logger.info("Resources list returned", {
         requestId,
         fileCount: files.length,
         datasetCount: datasets.length,
@@ -75,9 +76,8 @@ export class ListResourcesHandler {
 
       return ResponseBuilder.resourceList(requestId, resources);
     } catch (error) {
-      this.logger.error('Failed to list resources', error as Error, { requestId });
+      this.logger.error("Failed to list resources", error as Error, { requestId });
       return ResponseBuilder.fromError(requestId, error as Error);
     }
   }
 }
-

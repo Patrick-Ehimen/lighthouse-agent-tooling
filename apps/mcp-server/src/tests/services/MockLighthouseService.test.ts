@@ -2,30 +2,30 @@
  * MockLighthouseService unit tests
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { MockLighthouseService } from '../../services/MockLighthouseService.js';
-import { createTestFile, cleanupTestFiles } from '../utils/test-helpers.js';
-import { CIDGenerator } from '../../utils/cid-generator.js';
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { MockLighthouseService } from "../../services/MockLighthouseService.js";
+import { createTestFile, cleanupTestFiles } from "../utils/test-helpers.js";
+import { CIDGenerator } from "../../utils/cid-generator.js";
 
-describe('MockLighthouseService', () => {
+describe("MockLighthouseService", () => {
   let service: MockLighthouseService;
   let testFilePath: string;
 
   beforeEach(async () => {
     service = new MockLighthouseService();
-    testFilePath = await createTestFile('test.txt', 'Test file content');
+    testFilePath = await createTestFile("test.txt", "Test file content");
     // Small delay to ensure file system is ready
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
   });
 
   afterEach(async () => {
     service.clear();
     // Delay cleanup slightly to avoid race conditions
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 10));
   });
 
-  describe('uploadFile', () => {
-    it('should upload file successfully', async () => {
+  describe("uploadFile", () => {
+    it("should upload file successfully", async () => {
       const result = await service.uploadFile({ filePath: testFilePath });
 
       expect(result.cid).toBeDefined();
@@ -35,7 +35,7 @@ describe('MockLighthouseService', () => {
       expect(result.uploadedAt).toBeInstanceOf(Date);
     });
 
-    it('should upload with encryption flag', async () => {
+    it("should upload with encryption flag", async () => {
       const result = await service.uploadFile({
         filePath: testFilePath,
         encrypt: true,
@@ -44,8 +44,8 @@ describe('MockLighthouseService', () => {
       expect(result.encrypted).toBe(true);
     });
 
-    it('should upload with tags', async () => {
-      const tags = ['test', 'upload'];
+    it("should upload with tags", async () => {
+      const tags = ["test", "upload"];
       const result = await service.uploadFile({
         filePath: testFilePath,
         tags,
@@ -54,12 +54,12 @@ describe('MockLighthouseService', () => {
       expect(result.tags).toEqual(tags);
     });
 
-    it('should upload with access conditions', async () => {
+    it("should upload with access conditions", async () => {
       const accessConditions = [
         {
-          type: 'token_balance' as any,
-          condition: 'balance',
-          value: '100',
+          type: "token_balance" as any,
+          condition: "balance",
+          value: "100",
         },
       ];
 
@@ -71,13 +71,11 @@ describe('MockLighthouseService', () => {
       expect(result.accessConditions).toEqual(accessConditions);
     });
 
-    it('should throw error for non-existent file', async () => {
-      await expect(
-        service.uploadFile({ filePath: '/non/existent/file.txt' })
-      ).rejects.toThrow();
+    it("should throw error for non-existent file", async () => {
+      await expect(service.uploadFile({ filePath: "/non/existent/file.txt" })).rejects.toThrow();
     });
 
-    it('should complete upload within 500ms', async () => {
+    it("should complete upload within 500ms", async () => {
       const startTime = Date.now();
       await service.uploadFile({ filePath: testFilePath });
       const uploadTime = Date.now() - startTime;
@@ -85,7 +83,7 @@ describe('MockLighthouseService', () => {
       expect(uploadTime).toBeLessThan(500);
     });
 
-    it('should track storage usage', async () => {
+    it("should track storage usage", async () => {
       await service.uploadFile({ filePath: testFilePath });
       const stats = service.getStorageStats();
 
@@ -94,7 +92,7 @@ describe('MockLighthouseService', () => {
     });
   });
 
-  describe('fetchFile', () => {
+  describe("fetchFile", () => {
     let uploadedCid: string;
 
     beforeEach(async () => {
@@ -102,7 +100,7 @@ describe('MockLighthouseService', () => {
       uploadedCid = result.cid;
     });
 
-    it('should fetch file successfully', async () => {
+    it("should fetch file successfully", async () => {
       const result = await service.fetchFile({ cid: uploadedCid });
 
       expect(result.cid).toBe(uploadedCid);
@@ -110,8 +108,8 @@ describe('MockLighthouseService', () => {
       expect(result.downloadedAt).toBeInstanceOf(Date);
     });
 
-    it('should fetch with custom output path', async () => {
-      const outputPath = '/custom/output/path.txt';
+    it("should fetch with custom output path", async () => {
+      const outputPath = "/custom/output/path.txt";
       const result = await service.fetchFile({
         cid: uploadedCid,
         outputPath,
@@ -120,19 +118,17 @@ describe('MockLighthouseService', () => {
       expect(result.filePath).toBe(outputPath);
     });
 
-    it('should throw error for invalid CID', async () => {
-      await expect(service.fetchFile({ cid: 'invalid-cid' })).rejects.toThrow(
-        'Invalid CID format'
-      );
+    it("should throw error for invalid CID", async () => {
+      await expect(service.fetchFile({ cid: "invalid-cid" })).rejects.toThrow("Invalid CID format");
     });
 
-    it('should throw error for non-existent CID', async () => {
+    it("should throw error for non-existent CID", async () => {
       // Generate a valid CID that doesn't exist in storage
-      const fakeCid = CIDGenerator.generate('nonexistent-file-xyz-12345');
-      await expect(service.fetchFile({ cid: fakeCid })).rejects.toThrow('File not found');
+      const fakeCid = CIDGenerator.generate("nonexistent-file-xyz-12345");
+      await expect(service.fetchFile({ cid: fakeCid })).rejects.toThrow("File not found");
     });
 
-    it('should complete fetch within 500ms', async () => {
+    it("should complete fetch within 500ms", async () => {
       const startTime = Date.now();
       await service.fetchFile({ cid: uploadedCid });
       const fetchTime = Date.now() - startTime;
@@ -141,7 +137,7 @@ describe('MockLighthouseService', () => {
     });
   });
 
-  describe('pinFile', () => {
+  describe("pinFile", () => {
     let uploadedCid: string;
 
     beforeEach(async () => {
@@ -149,7 +145,7 @@ describe('MockLighthouseService', () => {
       uploadedCid = result.cid;
     });
 
-    it('should pin file successfully', async () => {
+    it("should pin file successfully", async () => {
       const result = await service.pinFile(uploadedCid);
 
       expect(result.success).toBe(true);
@@ -157,18 +153,18 @@ describe('MockLighthouseService', () => {
       expect(result.pinned).toBe(true);
     });
 
-    it('should throw error for invalid CID', async () => {
-      await expect(service.pinFile('invalid-cid')).rejects.toThrow('Invalid CID format');
+    it("should throw error for invalid CID", async () => {
+      await expect(service.pinFile("invalid-cid")).rejects.toThrow("Invalid CID format");
     });
 
-    it('should throw error for non-existent CID', async () => {
+    it("should throw error for non-existent CID", async () => {
       // Generate a valid CID that doesn't exist in storage
-      const fakeCid = CIDGenerator.generate('nonexistent-file-abc-67890');
-      await expect(service.pinFile(fakeCid)).rejects.toThrow('File not found');
+      const fakeCid = CIDGenerator.generate("nonexistent-file-abc-67890");
+      await expect(service.pinFile(fakeCid)).rejects.toThrow("File not found");
     });
   });
 
-  describe('unpinFile', () => {
+  describe("unpinFile", () => {
     let uploadedCid: string;
 
     beforeEach(async () => {
@@ -177,7 +173,7 @@ describe('MockLighthouseService', () => {
       await service.pinFile(uploadedCid);
     });
 
-    it('should unpin file successfully', async () => {
+    it("should unpin file successfully", async () => {
       const result = await service.unpinFile(uploadedCid);
 
       expect(result.success).toBe(true);
@@ -186,7 +182,7 @@ describe('MockLighthouseService', () => {
     });
   });
 
-  describe('getFileInfo', () => {
+  describe("getFileInfo", () => {
     let uploadedCid: string;
 
     beforeEach(async () => {
@@ -194,7 +190,7 @@ describe('MockLighthouseService', () => {
       uploadedCid = result.cid;
     });
 
-    it('should return file info', () => {
+    it("should return file info", () => {
       const info = service.getFileInfo(uploadedCid);
 
       expect(info).toBeDefined();
@@ -202,30 +198,30 @@ describe('MockLighthouseService', () => {
       expect(info?.filePath).toBe(testFilePath);
     });
 
-    it('should return undefined for non-existent CID', () => {
-      const info = service.getFileInfo('QmYwAPJzv5CZsnAXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX');
+    it("should return undefined for non-existent CID", () => {
+      const info = service.getFileInfo("QmYwAPJzv5CZsnAXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
       expect(info).toBeUndefined();
     });
   });
 
-  describe('listFiles', () => {
-    it('should list all uploaded files', async () => {
+  describe("listFiles", () => {
+    it("should list all uploaded files", async () => {
       await service.uploadFile({ filePath: testFilePath });
-      const file2Path = await createTestFile('test2.txt', 'Second test file');
+      const file2Path = await createTestFile("test2.txt", "Second test file");
       await service.uploadFile({ filePath: file2Path });
 
       const files = service.listFiles();
       expect(files).toHaveLength(2);
     });
 
-    it('should return empty array when no files uploaded', () => {
+    it("should return empty array when no files uploaded", () => {
       const files = service.listFiles();
       expect(files).toHaveLength(0);
     });
   });
 
-  describe('getStorageStats', () => {
-    it('should return accurate storage statistics', async () => {
+  describe("getStorageStats", () => {
+    it("should return accurate storage statistics", async () => {
       await service.uploadFile({ filePath: testFilePath });
 
       const stats = service.getStorageStats();
@@ -238,8 +234,8 @@ describe('MockLighthouseService', () => {
     });
   });
 
-  describe('clear', () => {
-    it('should clear all stored files', async () => {
+  describe("clear", () => {
+    it("should clear all stored files", async () => {
       await service.uploadFile({ filePath: testFilePath });
       service.clear();
 
@@ -252,15 +248,14 @@ describe('MockLighthouseService', () => {
     });
   });
 
-  describe('storage limits', () => {
-    it('should enforce storage quota', async () => {
+  describe("storage limits", () => {
+    it("should enforce storage quota", async () => {
       const smallService = new MockLighthouseService(100); // 100 bytes limit
-      const largefile = await createTestFile('large.txt', 'x'.repeat(200));
+      const largefile = await createTestFile("large.txt", "x".repeat(200));
 
       await expect(smallService.uploadFile({ filePath: largefile })).rejects.toThrow(
-        'Storage quota exceeded'
+        "Storage quota exceeded",
       );
     });
   });
 });
-

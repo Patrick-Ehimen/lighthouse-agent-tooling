@@ -2,39 +2,39 @@
  * Integration tests for LighthouseMCPServer
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { LighthouseMCPServer } from '../../server.js';
-import { createTestFile, cleanupTestFiles } from '../utils/test-helpers.js';
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { LighthouseMCPServer } from "../../server.js";
+import { createTestFile, cleanupTestFiles } from "../utils/test-helpers.js";
 
-describe('LighthouseMCPServer Integration', () => {
+describe("LighthouseMCPServer Integration", () => {
   let server: LighthouseMCPServer;
   let testFilePath: string;
 
   beforeEach(async () => {
     server = new LighthouseMCPServer({
-      logLevel: 'error', // Reduce noise during tests
+      logLevel: "error", // Reduce noise during tests
       enableMetrics: false,
     });
     // Register tools for testing
     await server.registerTools();
-    testFilePath = await createTestFile('integration-test.txt', 'Integration test content');
+    testFilePath = await createTestFile("integration-test.txt", "Integration test content");
   });
 
   afterEach(async () => {
     // Don't cleanup during tests, only at the end
   });
 
-  describe('Server initialization', () => {
-    it('should create server instance', () => {
+  describe("Server initialization", () => {
+    it("should create server instance", () => {
       expect(server).toBeDefined();
     });
 
-    it('should have registry initialized', () => {
+    it("should have registry initialized", () => {
       const registry = server.getRegistry();
       expect(registry).toBeDefined();
     });
 
-    it('should have services initialized', () => {
+    it("should have services initialized", () => {
       const lighthouseService = server.getLighthouseService();
       const datasetService = server.getDatasetService();
 
@@ -42,21 +42,21 @@ describe('LighthouseMCPServer Integration', () => {
       expect(datasetService).toBeDefined();
     });
 
-    it('should register all tools', () => {
+    it("should register all tools", () => {
       const registry = server.getRegistry();
       const tools = registry.listTools();
 
       expect(tools.length).toBeGreaterThanOrEqual(3);
-      expect(tools.map((t) => t.name)).toContain('lighthouse_upload_file');
-      expect(tools.map((t) => t.name)).toContain('lighthouse_create_dataset');
-      expect(tools.map((t) => t.name)).toContain('lighthouse_fetch_file');
+      expect(tools.map((t) => t.name)).toContain("lighthouse_upload_file");
+      expect(tools.map((t) => t.name)).toContain("lighthouse_create_dataset");
+      expect(tools.map((t) => t.name)).toContain("lighthouse_fetch_file");
     });
   });
 
-  describe('Tool execution flow', () => {
-    it('should execute upload tool successfully', async () => {
+  describe("Tool execution flow", () => {
+    it("should execute upload tool successfully", async () => {
       const registry = server.getRegistry();
-      const result = await registry.executeTool('lighthouse_upload_file', {
+      const result = await registry.executeTool("lighthouse_upload_file", {
         filePath: testFilePath,
         encrypt: false,
       });
@@ -66,11 +66,11 @@ describe('LighthouseMCPServer Integration', () => {
       expect((result.data as any).cid).toBeDefined();
     });
 
-    it('should execute dataset creation tool', async () => {
+    it("should execute dataset creation tool", async () => {
       const registry = server.getRegistry();
-      const result = await registry.executeTool('lighthouse_create_dataset', {
-        name: 'Integration Test Dataset',
-        description: 'Created during integration test',
+      const result = await registry.executeTool("lighthouse_create_dataset", {
+        name: "Integration Test Dataset",
+        description: "Created during integration test",
         files: [testFilePath],
       });
 
@@ -79,11 +79,11 @@ describe('LighthouseMCPServer Integration', () => {
       expect((result.data as any).id).toBeDefined();
     });
 
-    it('should execute fetch tool after upload', async () => {
+    it("should execute fetch tool after upload", async () => {
       const registry = server.getRegistry();
 
       // First upload
-      const uploadResult = await registry.executeTool('lighthouse_upload_file', {
+      const uploadResult = await registry.executeTool("lighthouse_upload_file", {
         filePath: testFilePath,
       });
 
@@ -91,7 +91,7 @@ describe('LighthouseMCPServer Integration', () => {
       const cid = (uploadResult.data as any).cid;
 
       // Then fetch
-      const fetchResult = await registry.executeTool('lighthouse_fetch_file', {
+      const fetchResult = await registry.executeTool("lighthouse_fetch_file", {
         cid,
       });
 
@@ -99,9 +99,9 @@ describe('LighthouseMCPServer Integration', () => {
       expect((fetchResult.data as any).cid).toBe(cid);
     });
 
-    it('should handle invalid tool arguments', async () => {
+    it("should handle invalid tool arguments", async () => {
       const registry = server.getRegistry();
-      const result = await registry.executeTool('lighthouse_upload_file', {
+      const result = await registry.executeTool("lighthouse_upload_file", {
         // Missing required filePath
         encrypt: true,
       });
@@ -111,12 +111,12 @@ describe('LighthouseMCPServer Integration', () => {
     });
   });
 
-  describe('Server statistics', () => {
-    it('should track server statistics', async () => {
+  describe("Server statistics", () => {
+    it("should track server statistics", async () => {
       const registry = server.getRegistry();
 
       // Execute some operations
-      await registry.executeTool('lighthouse_upload_file', {
+      await registry.executeTool("lighthouse_upload_file", {
         filePath: testFilePath,
       });
 
@@ -128,7 +128,7 @@ describe('LighthouseMCPServer Integration', () => {
       expect(stats.datasets).toBeDefined();
     });
 
-    it('should track registry metrics', async () => {
+    it("should track registry metrics", async () => {
       const registry = server.getRegistry();
       const metrics = registry.getMetrics();
 
@@ -136,7 +136,7 @@ describe('LighthouseMCPServer Integration', () => {
       expect(metrics.registrationTimestamp).toBeInstanceOf(Date);
     });
 
-    it('should track storage statistics', () => {
+    it("should track storage statistics", () => {
       const lighthouseService = server.getLighthouseService();
       const stats = lighthouseService.getStorageStats();
 
@@ -147,21 +147,21 @@ describe('LighthouseMCPServer Integration', () => {
     });
   });
 
-  describe('End-to-end workflow', () => {
-    it('should handle complete dataset creation workflow', async () => {
+  describe("End-to-end workflow", () => {
+    it("should handle complete dataset creation workflow", async () => {
       const registry = server.getRegistry();
       const file1 = testFilePath;
-      const file2 = await createTestFile('file2.txt', 'Second file');
+      const file2 = await createTestFile("file2.txt", "Second file");
 
       // Create dataset with multiple files
-      const datasetResult = await registry.executeTool('lighthouse_create_dataset', {
-        name: 'E2E Test Dataset',
-        description: 'End-to-end test dataset',
+      const datasetResult = await registry.executeTool("lighthouse_create_dataset", {
+        name: "E2E Test Dataset",
+        description: "End-to-end test dataset",
         files: [file1, file2],
         encrypt: true,
         metadata: {
-          author: 'Test Suite',
-          version: '1.0.0',
+          author: "Test Suite",
+          version: "1.0.0",
         },
       });
 
@@ -169,7 +169,7 @@ describe('LighthouseMCPServer Integration', () => {
 
       const dataset = datasetResult.data as any;
       expect(dataset.id).toBeDefined();
-      expect(dataset.name).toBe('E2E Test Dataset');
+      expect(dataset.name).toBe("E2E Test Dataset");
       expect(dataset.files).toHaveLength(2);
       expect(dataset.encrypted).toBe(true);
 
@@ -180,7 +180,7 @@ describe('LighthouseMCPServer Integration', () => {
 
       // Fetch one of the uploaded files
       const firstFileCid = dataset.files[0].cid;
-      const fetchResult = await registry.executeTool('lighthouse_fetch_file', {
+      const fetchResult = await registry.executeTool("lighthouse_fetch_file", {
         cid: firstFileCid,
       });
 
@@ -188,12 +188,12 @@ describe('LighthouseMCPServer Integration', () => {
       expect((fetchResult.data as any).cid).toBe(firstFileCid);
     });
 
-    it('should handle errors gracefully', async () => {
+    it("should handle errors gracefully", async () => {
       const registry = server.getRegistry();
 
       // Try to fetch non-existent file
-      const result = await registry.executeTool('lighthouse_fetch_file', {
-        cid: 'QmInvalidCIDThatDoesNotExist1234567890123456',
+      const result = await registry.executeTool("lighthouse_fetch_file", {
+        cid: "QmInvalidCIDThatDoesNotExist1234567890123456",
       });
 
       expect(result.success).toBe(false);
@@ -201,19 +201,19 @@ describe('LighthouseMCPServer Integration', () => {
     });
   });
 
-  describe('Performance requirements', () => {
-    it('should register tools in less than 100ms', () => {
+  describe("Performance requirements", () => {
+    it("should register tools in less than 100ms", () => {
       const registry = server.getRegistry();
       const metrics = registry.getMetrics();
 
       expect(metrics.averageRegistrationTime).toBeLessThan(100);
     });
 
-    it('should execute mock operations in less than 500ms', async () => {
+    it("should execute mock operations in less than 500ms", async () => {
       const registry = server.getRegistry();
       const startTime = Date.now();
 
-      await registry.executeTool('lighthouse_upload_file', {
+      await registry.executeTool("lighthouse_upload_file", {
         filePath: testFilePath,
       });
 
@@ -222,4 +222,3 @@ describe('LighthouseMCPServer Integration', () => {
     });
   });
 });
-

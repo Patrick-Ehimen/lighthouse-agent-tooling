@@ -2,9 +2,9 @@
  * Mock Lighthouse Service - Simulates Lighthouse file operations
  */
 
-import { UploadResult, DownloadResult, AccessCondition } from '@lighthouse-tooling/types';
-import { Logger, FileUtils } from '@lighthouse-tooling/shared';
-import { CIDGenerator } from '../utils/cid-generator.js';
+import { UploadResult, DownloadResult, AccessCondition } from "@lighthouse-tooling/types";
+import { Logger, FileUtils } from "@lighthouse-tooling/shared";
+import { CIDGenerator } from "../utils/cid-generator.js";
 
 /**
  * Stored file information
@@ -29,8 +29,9 @@ export class MockLighthouseService {
 
   constructor(maxStorageSize = 1024 * 1024 * 1024, logger?: Logger) {
     this.maxStorageSize = maxStorageSize; // Default 1GB
-    this.logger = logger || Logger.getInstance({ level: 'info', component: 'MockLighthouseService' });
-    this.logger.info('Mock Lighthouse Service initialized', { maxStorageSize });
+    this.logger =
+      logger || Logger.getInstance({ level: "info", component: "MockLighthouseService" });
+    this.logger.info("Mock Lighthouse Service initialized", { maxStorageSize });
   }
 
   /**
@@ -45,7 +46,7 @@ export class MockLighthouseService {
     const startTime = Date.now();
 
     try {
-      this.logger.info('Starting file upload', { filePath: params.filePath });
+      this.logger.info("Starting file upload", { filePath: params.filePath });
 
       // Simulate validation delay
       await this.simulateDelay(50, 100);
@@ -61,9 +62,9 @@ export class MockLighthouseService {
         fileInfo = await FileUtils.getFileInfo(params.filePath);
       } catch (error) {
         // If FileUtils fails, create a basic file info
-        const fs = await import('fs/promises');
+        const fs = await import("fs/promises");
         const stats = await fs.stat(params.filePath);
-        const path = await import('path');
+        const path = await import("path");
         fileInfo = {
           path: params.filePath,
           name: path.basename(params.filePath),
@@ -75,7 +76,7 @@ export class MockLighthouseService {
 
       // Check storage limits
       if (this.currentStorageSize + fileInfo.size > this.maxStorageSize) {
-        throw new Error('Storage quota exceeded');
+        throw new Error("Storage quota exceeded");
       }
 
       // Generate CID
@@ -112,7 +113,7 @@ export class MockLighthouseService {
       };
 
       const executionTime = Date.now() - startTime;
-      this.logger.info('File uploaded successfully', {
+      this.logger.info("File uploaded successfully", {
         cid,
         size: fileInfo.size,
         executionTime,
@@ -120,7 +121,7 @@ export class MockLighthouseService {
 
       return result;
     } catch (error) {
-      this.logger.error('File upload failed', error as Error, {
+      this.logger.error("File upload failed", error as Error, {
         filePath: params.filePath,
       });
       throw error;
@@ -138,7 +139,7 @@ export class MockLighthouseService {
     const startTime = Date.now();
 
     try {
-      this.logger.info('Starting file fetch', { cid: params.cid });
+      this.logger.info("Starting file fetch", { cid: params.cid });
 
       // Validate CID format
       if (!CIDGenerator.isValid(params.cid)) {
@@ -164,7 +165,7 @@ export class MockLighthouseService {
       };
 
       const executionTime = Date.now() - startTime;
-      this.logger.info('File fetched successfully', {
+      this.logger.info("File fetched successfully", {
         cid: params.cid,
         size: storedFile.size,
         executionTime,
@@ -172,7 +173,7 @@ export class MockLighthouseService {
 
       return result;
     } catch (error) {
-      this.logger.error('File fetch failed', error as Error, { cid: params.cid });
+      this.logger.error("File fetch failed", error as Error, { cid: params.cid });
       throw error;
     }
   }
@@ -182,7 +183,7 @@ export class MockLighthouseService {
    */
   async pinFile(cid: string): Promise<{ success: boolean; cid: string; pinned: boolean }> {
     try {
-      this.logger.info('Pinning file', { cid });
+      this.logger.info("Pinning file", { cid });
 
       // Validate CID
       if (!CIDGenerator.isValid(cid)) {
@@ -199,7 +200,7 @@ export class MockLighthouseService {
 
       storedFile.pinned = true;
 
-      this.logger.info('File pinned successfully', { cid });
+      this.logger.info("File pinned successfully", { cid });
 
       return {
         success: true,
@@ -207,7 +208,7 @@ export class MockLighthouseService {
         pinned: true,
       };
     } catch (error) {
-      this.logger.error('Pin file failed', error as Error, { cid });
+      this.logger.error("Pin file failed", error as Error, { cid });
       throw error;
     }
   }
@@ -217,7 +218,7 @@ export class MockLighthouseService {
    */
   async unpinFile(cid: string): Promise<{ success: boolean; cid: string; pinned: boolean }> {
     try {
-      this.logger.info('Unpinning file', { cid });
+      this.logger.info("Unpinning file", { cid });
 
       const storedFile = this.fileStore.get(cid);
       if (!storedFile) {
@@ -229,7 +230,7 @@ export class MockLighthouseService {
 
       storedFile.pinned = false;
 
-      this.logger.info('File unpinned successfully', { cid });
+      this.logger.info("File unpinned successfully", { cid });
 
       return {
         success: true,
@@ -237,7 +238,7 @@ export class MockLighthouseService {
         pinned: false,
       };
     } catch (error) {
-      this.logger.error('Unpin file failed', error as Error, { cid });
+      this.logger.error("Unpin file failed", error as Error, { cid });
       throw error;
     }
   }
@@ -279,7 +280,7 @@ export class MockLighthouseService {
   clear(): void {
     this.fileStore.clear();
     this.currentStorageSize = 0;
-    this.logger.info('Mock storage cleared');
+    this.logger.info("Mock storage cleared");
   }
 
   /**
@@ -290,4 +291,3 @@ export class MockLighthouseService {
     await new Promise((resolve) => setTimeout(resolve, delay));
   }
 }
-

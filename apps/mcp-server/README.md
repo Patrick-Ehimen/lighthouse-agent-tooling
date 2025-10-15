@@ -49,13 +49,13 @@ node dist/index.js --help
 ### Programmatic Usage
 
 ```typescript
-import { LighthouseMCPServer } from '@lighthouse-tooling/mcp-server';
+import { LighthouseMCPServer } from "@lighthouse-tooling/mcp-server";
 
 // Create server instance
 const server = new LighthouseMCPServer({
-  name: 'lighthouse-storage',
-  version: '0.1.0',
-  logLevel: 'info',
+  name: "lighthouse-storage",
+  version: "0.1.0",
+  logLevel: "info",
   maxStorageSize: 1024 * 1024 * 1024, // 1GB
   enableMetrics: true,
 });
@@ -65,7 +65,7 @@ await server.start();
 
 // Get server statistics
 const stats = server.getStats();
-console.log('Server stats:', stats);
+console.log("Server stats:", stats);
 
 // Graceful shutdown
 await server.stop();
@@ -78,12 +78,14 @@ await server.stop();
 Upload a file to IPFS via Lighthouse with optional encryption.
 
 **Parameters:**
+
 - `filePath` (required): Path to the file to upload
 - `encrypt` (optional): Whether to encrypt the file
 - `accessConditions` (optional): Access control conditions
 - `tags` (optional): Tags for organization
 
 **Example:**
+
 ```json
 {
   "filePath": "/path/to/file.txt",
@@ -97,6 +99,7 @@ Upload a file to IPFS via Lighthouse with optional encryption.
 Create a managed dataset collection with metadata.
 
 **Parameters:**
+
 - `name` (required): Dataset name
 - `description` (optional): Dataset description
 - `files` (required): Array of file paths to include
@@ -104,6 +107,7 @@ Create a managed dataset collection with metadata.
 - `encrypt` (optional): Whether to encrypt the dataset
 
 **Example:**
+
 ```json
 {
   "name": "Training Dataset",
@@ -121,11 +125,13 @@ Create a managed dataset collection with metadata.
 Download and optionally decrypt a file from Lighthouse.
 
 **Parameters:**
+
 - `cid` (required): IPFS CID of the file
 - `outputPath` (optional): Local path to save the file
 - `decrypt` (optional): Whether to decrypt the file
 
 **Example:**
+
 ```json
 {
   "cid": "QmYwAPJzv5CZsnA...",
@@ -177,6 +183,7 @@ pnpm run test:watch
 ### Test Coverage
 
 The test suite includes:
+
 - **Unit Tests**: Individual component testing
 - **Integration Tests**: End-to-end workflow testing
 - **Performance Tests**: Metric validation
@@ -189,12 +196,12 @@ Target: **>90% code coverage** ✅
 
 ```typescript
 interface ServerConfig {
-  name: string;              // Server name
-  version: string;           // Server version
-  logLevel: 'debug' | 'info' | 'warn' | 'error';
-  maxStorageSize: number;    // Max storage in bytes
-  enableMetrics: boolean;    // Enable metrics collection
-  metricsInterval: number;   // Metrics collection interval (ms)
+  name: string; // Server name
+  version: string; // Server version
+  logLevel: "debug" | "info" | "warn" | "error";
+  maxStorageSize: number; // Max storage in bytes
+  enableMetrics: boolean; // Enable metrics collection
+  metricsInterval: number; // Metrics collection interval (ms)
 }
 ```
 
@@ -279,13 +286,13 @@ const metrics = registry.getMetrics();
 ```typescript
 // Upload file
 const result = await lighthouseService.uploadFile({
-  filePath: '/path/to/file',
-  encrypt: true
+  filePath: "/path/to/file",
+  encrypt: true,
 });
 
 // Fetch file
 const file = await lighthouseService.fetchFile({
-  cid: 'QmYwAPJzv5CZsnA...'
+  cid: "QmYwAPJzv5CZsnA...",
 });
 
 // Get storage stats
@@ -311,10 +318,10 @@ Contributions are welcome! Please read CONTRIBUTING.md for guidelines.
 ## 📞 Support
 
 For issues and questions:
+
 - GitHub Issues: [lighthouse-agent-tooling/issues](https://github.com/Patrick-Ehimen/lighthouse-agent-tooling/issues)
 - Documentation: See `/apps/docs/TECHNICAL_PROPOSAL.md`
 
 ---
 
 **Built with ❤️ for the Lighthouse ecosystem**
-

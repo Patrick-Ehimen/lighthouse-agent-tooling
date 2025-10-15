@@ -2,10 +2,10 @@
  * Mock Dataset Service - Simulates dataset management operations
  */
 
-import { Dataset, DatasetConfig, UploadResult } from '@lighthouse-tooling/types';
-import { Logger } from '@lighthouse-tooling/shared';
-import { CIDGenerator } from '../utils/cid-generator.js';
-import { MockLighthouseService } from './MockLighthouseService.js';
+import { Dataset, DatasetConfig, UploadResult } from "@lighthouse-tooling/types";
+import { Logger } from "@lighthouse-tooling/shared";
+import { CIDGenerator } from "../utils/cid-generator.js";
+import { MockLighthouseService } from "./MockLighthouseService.js";
 
 export class MockDatasetService {
   private datasets: Map<string, Dataset> = new Map();
@@ -14,8 +14,8 @@ export class MockDatasetService {
 
   constructor(lighthouseService: MockLighthouseService, logger?: Logger) {
     this.lighthouseService = lighthouseService;
-    this.logger = logger || Logger.getInstance({ level: 'info', component: 'MockDatasetService' });
-    this.logger.info('Mock Dataset Service initialized');
+    this.logger = logger || Logger.getInstance({ level: "info", component: "MockDatasetService" });
+    this.logger.info("Mock Dataset Service initialized");
   }
 
   /**
@@ -33,20 +33,20 @@ export class MockDatasetService {
     const startTime = Date.now();
 
     try {
-      this.logger.info('Creating dataset', { name: params.name, fileCount: params.files.length });
+      this.logger.info("Creating dataset", { name: params.name, fileCount: params.files.length });
 
       // Validate inputs
       if (!params.name || params.name.trim().length === 0) {
-        throw new Error('Dataset name is required');
+        throw new Error("Dataset name is required");
       }
 
       if (!params.files || params.files.length === 0) {
-        throw new Error('At least one file is required');
+        throw new Error("At least one file is required");
       }
 
       // Check if dataset already exists
       const existingDataset = Array.from(this.datasets.values()).find(
-        (d) => d.name === params.name
+        (d) => d.name === params.name,
       );
       if (existingDataset) {
         throw new Error(`Dataset with name "${params.name}" already exists`);
@@ -64,7 +64,7 @@ export class MockDatasetService {
           });
           uploadResults.push(result);
         } catch (error) {
-          this.logger.error('Failed to upload file in dataset', error as Error, { filePath });
+          this.logger.error("Failed to upload file in dataset", error as Error, { filePath });
           throw new Error(`Failed to upload file: ${filePath}`);
         }
       }
@@ -76,7 +76,7 @@ export class MockDatasetService {
       const dataset: Dataset = {
         id: datasetId,
         name: params.name,
-        description: params.description || '',
+        description: params.description || "",
         files: uploadResults,
         metadata: {
           author: params.metadata?.author as string | undefined,
@@ -85,7 +85,7 @@ export class MockDatasetService {
           keywords: params.metadata?.keywords as string[] | undefined,
           custom: params.metadata,
         },
-        version: '1.0.0',
+        version: "1.0.0",
         createdAt: new Date(),
         updatedAt: new Date(),
         encrypted: params.encrypt || false,
@@ -96,7 +96,7 @@ export class MockDatasetService {
       this.datasets.set(datasetId, dataset);
 
       const executionTime = Date.now() - startTime;
-      this.logger.info('Dataset created successfully', {
+      this.logger.info("Dataset created successfully", {
         datasetId,
         name: params.name,
         fileCount: uploadResults.length,
@@ -105,7 +105,7 @@ export class MockDatasetService {
 
       return dataset;
     } catch (error) {
-      this.logger.error('Dataset creation failed', error as Error, { name: params.name });
+      this.logger.error("Dataset creation failed", error as Error, { name: params.name });
       throw error;
     }
   }
@@ -120,11 +120,7 @@ export class MockDatasetService {
   /**
    * List all datasets
    */
-  listDatasets(filter?: {
-    encrypted?: boolean;
-    namePattern?: string;
-    tags?: string[];
-  }): Dataset[] {
+  listDatasets(filter?: { encrypted?: boolean; namePattern?: string; tags?: string[] }): Dataset[] {
     let datasets = Array.from(this.datasets.values());
 
     if (filter) {
@@ -133,13 +129,13 @@ export class MockDatasetService {
       }
 
       if (filter.namePattern) {
-        const pattern = new RegExp(filter.namePattern, 'i');
+        const pattern = new RegExp(filter.namePattern, "i");
         datasets = datasets.filter((d) => pattern.test(d.name));
       }
 
       if (filter.tags && filter.tags.length > 0) {
         datasets = datasets.filter((d) =>
-          d.files.some((f: any) => f.tags?.some((tag: string) => filter.tags!.includes(tag)))
+          d.files.some((f: any) => f.tags?.some((tag: string) => filter.tags!.includes(tag))),
         );
       }
     }
@@ -156,7 +152,7 @@ export class MockDatasetService {
       description?: string;
       metadata?: Record<string, unknown>;
       version?: string;
-    }
+    },
   ): Promise<Dataset> {
     try {
       const dataset = this.datasets.get(datasetId);
@@ -182,11 +178,11 @@ export class MockDatasetService {
 
       dataset.updatedAt = new Date();
 
-      this.logger.info('Dataset updated', { datasetId });
+      this.logger.info("Dataset updated", { datasetId });
 
       return dataset;
     } catch (error) {
-      this.logger.error('Dataset update failed', error as Error, { datasetId });
+      this.logger.error("Dataset update failed", error as Error, { datasetId });
       throw error;
     }
   }
@@ -194,10 +190,7 @@ export class MockDatasetService {
   /**
    * Add files to existing dataset
    */
-  async addFilesToDataset(
-    datasetId: string,
-    files: string[]
-  ): Promise<Dataset> {
+  async addFilesToDataset(datasetId: string, files: string[]): Promise<Dataset> {
     try {
       const dataset = this.datasets.get(datasetId);
       if (!dataset) {
@@ -219,14 +212,14 @@ export class MockDatasetService {
       dataset.files.push(...uploadResults);
       dataset.updatedAt = new Date();
 
-      this.logger.info('Files added to dataset', {
+      this.logger.info("Files added to dataset", {
         datasetId,
         newFileCount: uploadResults.length,
       });
 
       return dataset;
     } catch (error) {
-      this.logger.error('Failed to add files to dataset', error as Error, { datasetId });
+      this.logger.error("Failed to add files to dataset", error as Error, { datasetId });
       throw error;
     }
   }
@@ -237,7 +230,7 @@ export class MockDatasetService {
   deleteDataset(datasetId: string): boolean {
     const result = this.datasets.delete(datasetId);
     if (result) {
-      this.logger.info('Dataset deleted', { datasetId });
+      this.logger.info("Dataset deleted", { datasetId });
     }
     return result;
   }
@@ -245,13 +238,15 @@ export class MockDatasetService {
   /**
    * Get dataset statistics
    */
-  getDatasetStats(datasetId: string): {
-    fileCount: number;
-    totalSize: number;
-    encrypted: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-  } | undefined {
+  getDatasetStats(datasetId: string):
+    | {
+        fileCount: number;
+        totalSize: number;
+        encrypted: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+      }
+    | undefined {
     const dataset = this.datasets.get(datasetId);
     if (!dataset) return undefined;
 
@@ -282,7 +277,7 @@ export class MockDatasetService {
       totalFiles: datasets.reduce((sum: number, d: any) => sum + d.files.length, 0),
       totalSize: datasets.reduce(
         (sum: number, d: any) => sum + d.files.reduce((s: number, f: any) => s + f.size, 0),
-        0
+        0,
       ),
       encryptedDatasets: datasets.filter((d: any) => d.encrypted).length,
     };
@@ -293,7 +288,6 @@ export class MockDatasetService {
    */
   clear(): void {
     this.datasets.clear();
-    this.logger.info('All datasets cleared');
+    this.logger.info("All datasets cleared");
   }
 }
-
