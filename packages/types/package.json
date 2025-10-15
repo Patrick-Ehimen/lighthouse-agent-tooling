@@ -4,6 +4,12 @@
   "description": "Shared TypeScript types and interfaces for Lighthouse AI integration system",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -13,13 +19,6 @@
   "files": [
     "dist"
   ],
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "clean": "rm -rf dist",
-    "type-check": "tsc --noEmit",
-    "check-types": "tsc --noEmit"
-  },
   "keywords": [
     "lighthouse",
     "types",

@@ -44,12 +44,10 @@ export const ERROR_CODES = {
 } as const;
 
 export const ERROR_MESSAGES = {
-  [ERROR_CODES.AUTHENTICATION_FAILED]:
-    "Authentication failed. Please check your credentials.",
+  [ERROR_CODES.AUTHENTICATION_FAILED]: "Authentication failed. Please check your credentials.",
   [ERROR_CODES.INVALID_API_KEY]: "Invalid API key provided.",
   [ERROR_CODES.TOKEN_EXPIRED]: "Authentication token has expired.",
-  [ERROR_CODES.INSUFFICIENT_PERMISSIONS]:
-    "Insufficient permissions for this operation.",
+  [ERROR_CODES.INSUFFICIENT_PERMISSIONS]: "Insufficient permissions for this operation.",
 
   [ERROR_CODES.FILE_NOT_FOUND]: "The specified file could not be found.",
   [ERROR_CODES.FILE_TOO_LARGE]: "File size exceeds the maximum allowed limit.",
@@ -58,12 +56,10 @@ export const ERROR_MESSAGES = {
   [ERROR_CODES.FILE_ENCRYPTION_FAILED]: "File encryption failed.",
   [ERROR_CODES.FILE_DECRYPTION_FAILED]: "File decryption failed.",
 
-  [ERROR_CODES.NETWORK_ERROR]:
-    "Network error occurred. Please check your connection.",
+  [ERROR_CODES.NETWORK_ERROR]: "Network error occurred. Please check your connection.",
   [ERROR_CODES.CONNECTION_TIMEOUT]: "Connection timed out. Please try again.",
   [ERROR_CODES.REQUEST_FAILED]: "Request failed. Please try again later.",
-  [ERROR_CODES.RATE_LIMITED]:
-    "Rate limit exceeded. Please wait before retrying.",
+  [ERROR_CODES.RATE_LIMITED]: "Rate limit exceeded. Please wait before retrying.",
 
   [ERROR_CODES.VALIDATION_ERROR]: "Validation error occurred.",
   [ERROR_CODES.INVALID_CID]: "Invalid CID format provided.",
