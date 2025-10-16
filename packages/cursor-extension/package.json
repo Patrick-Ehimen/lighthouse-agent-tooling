@@ -68,7 +68,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "npm run compile && node ./out/test/runTest.js"
+    "test": "npm run build && node ./out/test/runTest.js"
   },
   "dependencies": {
     "@lighthouse-tooling/shared": "workspace:*",

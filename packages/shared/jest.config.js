@@ -8,7 +8,7 @@ module.exports = {
   coverageDirectory: "coverage",
   coverageReporters: ["text", "lcov", "html"],
   setupFilesAfterEnv: ["<rootDir>/../../jest.setup.js"],
-  moduleNameMapping: {
+  moduleNameMapper: {
     "^@lighthouse-tooling/(.*)$": "<rootDir>/../$1/src",
   },
 };

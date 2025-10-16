@@ -13,7 +13,8 @@ import { Logger } from "@lighthouse-tooling/shared";
 import { LIGHTHOUSE_MCP_TOOLS } from "@lighthouse-tooling/types";
 
 import { ToolRegistry } from "./registry/ToolRegistry.js";
-import { MockLighthouseService } from "./services/MockLighthouseService.js";
+import { LighthouseService } from "./services/LighthouseService.js";
+import { ILighthouseService } from "./services/ILighthouseService.js";
 import { MockDatasetService } from "./services/MockDatasetService.js";
 import {
   ListToolsHandler,
@@ -26,7 +27,7 @@ import { ServerConfig, DEFAULT_SERVER_CONFIG } from "./config/server-config.js";
 export class LighthouseMCPServer {
   private server: Server;
   private registry: ToolRegistry;
-  private lighthouseService: MockLighthouseService;
+  private lighthouseService: ILighthouseService;
   private datasetService: MockDatasetService;
   private logger: Logger;
   private config: ServerConfig;
@@ -37,7 +38,13 @@ export class LighthouseMCPServer {
   private listResourcesHandler: ListResourcesHandler;
   private initializeHandler: InitializeHandler;
 
-  constructor(config: Partial<ServerConfig> = {}) {
+  constructor(
+    config: Partial<ServerConfig> = {},
+    services?: {
+      lighthouseService?: ILighthouseService;
+      datasetService?: MockDatasetService;
+    },
+  ) {
     this.config = { ...DEFAULT_SERVER_CONFIG, ...config };
 
     // Initialize logger
@@ -61,8 +68,20 @@ export class LighthouseMCPServer {
     );
 
     // Initialize services
-    this.lighthouseService = new MockLighthouseService(this.config.maxStorageSize, this.logger);
-    this.datasetService = new MockDatasetService(this.lighthouseService, this.logger);
+    if (services?.lighthouseService) {
+      this.lighthouseService = services.lighthouseService;
+    } else {
+      if (!this.config.lighthouseApiKey) {
+        throw new Error("LIGHTHOUSE_API_KEY environment variable is required");
+      }
+      this.lighthouseService = new LighthouseService(this.config.lighthouseApiKey, this.logger);
+    }
+
+    if (services?.datasetService) {
+      this.datasetService = services.datasetService;
+    } else {
+      this.datasetService = new MockDatasetService(this.lighthouseService, this.logger);
+    }
 
     // Initialize registry
     this.registry = new ToolRegistry(this.logger);
@@ -201,7 +220,7 @@ export class LighthouseMCPServer {
 
     // Handle ListResources
     this.server.setRequestHandler(ListResourcesRequestSchema, async () => {
-      const files = this.lighthouseService.listFiles();
+      const files = await this.lighthouseService.listFiles();
       const datasets = this.datasetService.listDatasets();
 
       const resources = [
@@ -236,6 +255,11 @@ export class LighthouseMCPServer {
         name: this.config.name,
         version: this.config.version,
       });
+
+      // Initialize Lighthouse service
+      if (this.lighthouseService.initialize) {
+        await this.lighthouseService.initialize();
+      }
 
       // Register tools
       await this.registerTools();
@@ -311,7 +335,7 @@ export class LighthouseMCPServer {
   getStats(): {
     registry: any;
     storage: any;
-    datasets: any;
+    datasets: unknown;
   } {
     return {
       registry: this.registry.getMetrics(),
@@ -330,7 +354,7 @@ export class LighthouseMCPServer {
   /**
    * Get lighthouse service instance (for testing)
    */
-  getLighthouseService(): MockLighthouseService {
+  getLighthouseService(): ILighthouseService {
     return this.lighthouseService;
   }
 

@@ -8,7 +8,7 @@ import { ServerConfig } from "./config/server-config.js";
 // Export main server class
 export { LighthouseMCPServer } from "./server.js";
 export { ToolRegistry } from "./registry/ToolRegistry.js";
-export { MockLighthouseService } from "./services/MockLighthouseService.js";
+export { LighthouseService } from "./services/LighthouseService.js";
 export { MockDatasetService } from "./services/MockDatasetService.js";
 export * from "./registry/types.js";
 export * from "./config/server-config.js";
@@ -28,7 +28,12 @@ async function main() {
       switch (arg) {
         case "--log-level":
           i++;
-          if (args[i]) config.logLevel = args[i] as any;
+          if (args[i]) {
+            const level = args[i] as string;
+            if (["debug", "info", "warn", "error"].includes(level)) {
+              config.logLevel = level as "debug" | "info" | "warn" | "error";
+            }
+          }
           break;
         case "--max-storage":
           i++;
@@ -42,6 +47,10 @@ async function main() {
           i++;
           if (args[i]) config.version = args[i];
           break;
+        case "--api-key":
+          i++;
+          if (args[i]) config.lighthouseApiKey = args[i];
+          break;
         case "--help":
           console.log(`
 Lighthouse MCP Server
@@ -53,6 +62,7 @@ Options:
   --max-storage <bytes>  Set maximum storage size in bytes [default: 1073741824]
   --name <name>         Set server name [default: lighthouse-storage]
   --version <version>    Set server version [default: 0.1.0]
+  --api-key <key>       Set Lighthouse API key (or use LIGHTHOUSE_API_KEY env var)
   --help                Show this help message
 
 Examples:

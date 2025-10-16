@@ -5,23 +5,9 @@
 import { UploadResult, DownloadResult, AccessCondition } from "@lighthouse-tooling/types";
 import { Logger, FileUtils } from "@lighthouse-tooling/shared";
 import { CIDGenerator } from "../utils/cid-generator.js";
+import { ILighthouseService, StoredFile } from "./ILighthouseService.js";
 
-/**
- * Stored file information
- */
-interface StoredFile {
-  cid: string;
-  filePath: string;
-  size: number;
-  encrypted: boolean;
-  accessConditions?: AccessCondition[];
-  tags?: string[];
-  uploadedAt: Date;
-  pinned: boolean;
-  hash?: string;
-}
-
-export class MockLighthouseService {
+export class MockLighthouseService implements ILighthouseService {
   private fileStore: Map<string, StoredFile> = new Map();
   private logger: Logger;
   private maxStorageSize: number;
@@ -152,8 +138,8 @@ export class MockLighthouseService {
         throw new Error(`File not found: ${params.cid}`);
       }
 
-      // Simulate download delay (150-350ms)
-      await this.simulateDelay(150, 350);
+      // Simulate download delay (50-200ms)
+      await this.simulateDelay(50, 200);
 
       const result: DownloadResult = {
         filePath: params.outputPath || storedFile.filePath,

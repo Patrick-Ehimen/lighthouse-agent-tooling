@@ -115,7 +115,15 @@ export class LighthouseAISDK extends EventEmitter {
    * ```
    */
   async initialize(): Promise<void> {
-    await this.errorHandler.executeWithRetry(() => this.auth.authenticate(), "initialization");
+    // For now, just validate that we have an API key
+    // The Lighthouse Web3 SDK uses the API key directly, not JWT tokens
+    if (!this.config.apiKey) {
+      throw new Error("API key is required");
+    }
+
+    // Set up auth state without making a token request
+    this.auth.getAuthState().isAuthenticated = true;
+    this.auth.getAuthState().accessToken = this.config.apiKey;
   }
 
   /**
@@ -167,8 +175,8 @@ export class LighthouseAISDK extends EventEmitter {
           // Start progress tracking
           this.progress.startOperation(operationId, "upload", fileStats.size);
 
-          // Get authentication token
-          const token = await this.auth.getAccessToken();
+          // Use API key directly
+          const apiKey = this.config.apiKey;
 
           // Create progress callback
           const progressCallback = this.progress.createProgressCallback(operationId);
@@ -179,7 +187,7 @@ export class LighthouseAISDK extends EventEmitter {
           // Upload file using Lighthouse SDK
           const uploadResponse = await lighthouse.upload(
             filePath,
-            token,
+            apiKey,
             false, // dealStatus - set to false for now
             undefined, // endDate
             (data: any) => {
@@ -302,9 +310,7 @@ export class LighthouseAISDK extends EventEmitter {
   async getFileInfo(cid: string): Promise<FileInfo> {
     return this.circuitBreaker.execute(async () => {
       return this.errorHandler.executeWithRetry(async () => {
-        const token = await this.auth.getAccessToken();
-
-        // Get file status from Lighthouse
+        // Get file status from Lighthouse (doesn't require auth for public files)
         const statusResponse = await lighthouse.getFileInfo(cid);
 
         if (!statusResponse) {
@@ -352,10 +358,10 @@ export class LighthouseAISDK extends EventEmitter {
   async listFiles(limit: number = 10, offset: number = 0): Promise<ListFilesResponse> {
     return this.circuitBreaker.execute(async () => {
       return this.errorHandler.executeWithRetry(async () => {
-        const token = await this.auth.getAccessToken();
+        const apiKey = this.config.apiKey;
 
         // Get uploads list from Lighthouse
-        const uploadsResponse = await lighthouse.getUploads(token);
+        const uploadsResponse = await lighthouse.getUploads(apiKey);
 
         if (!uploadsResponse || !uploadsResponse.data) {
           return {

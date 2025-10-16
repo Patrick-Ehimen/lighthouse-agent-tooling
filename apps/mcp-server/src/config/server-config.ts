@@ -10,6 +10,7 @@ export interface ServerConfig {
   port?: number;
   enableMetrics: boolean;
   metricsInterval: number;
+  lighthouseApiKey?: string;
 }
 
 export const DEFAULT_SERVER_CONFIG: ServerConfig = {
@@ -19,4 +20,5 @@ export const DEFAULT_SERVER_CONFIG: ServerConfig = {
   maxStorageSize: 1024 * 1024 * 1024, // 1GB
   enableMetrics: true,
   metricsInterval: 60000, // 1 minute
+  lighthouseApiKey: process.env.LIGHTHOUSE_API_KEY,
 };

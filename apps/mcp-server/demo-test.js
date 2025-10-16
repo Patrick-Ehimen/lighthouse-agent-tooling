@@ -1,5 +1,5 @@
-const { LighthouseMCPServer } = require("./dist/server.js");
-const fs = require("fs");
+import { LighthouseMCPServer } from "./dist/server.js";
+import fs from "fs";
 
 async function demo() {
   const testFile = "./demo-test.txt";
@@ -11,6 +11,9 @@ async function demo() {
     logLevel: "error",
     enableMetrics: false,
   });
+
+  // Register tools
+  await server.registerTools();
 
   const registry = server.getRegistry();
   console.log("Server initialized with", registry.listTools().length, "tools\n");

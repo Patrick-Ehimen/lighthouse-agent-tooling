@@ -5,14 +5,14 @@
 import { Dataset, DatasetConfig, UploadResult } from "@lighthouse-tooling/types";
 import { Logger } from "@lighthouse-tooling/shared";
 import { CIDGenerator } from "../utils/cid-generator.js";
-import { MockLighthouseService } from "./MockLighthouseService.js";
+import { ILighthouseService } from "./ILighthouseService.js";
 
 export class MockDatasetService {
   private datasets: Map<string, Dataset> = new Map();
   private logger: Logger;
-  private lighthouseService: MockLighthouseService;
+  private lighthouseService: ILighthouseService;
 
-  constructor(lighthouseService: MockLighthouseService, logger?: Logger) {
+  constructor(lighthouseService: ILighthouseService, logger?: Logger) {
     this.lighthouseService = lighthouseService;
     this.logger = logger || Logger.getInstance({ level: "info", component: "MockDatasetService" });
     this.logger.info("Mock Dataset Service initialized");

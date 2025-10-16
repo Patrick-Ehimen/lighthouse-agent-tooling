@@ -111,7 +111,7 @@ export class AuthenticationManager extends EventEmitter {
     expiresIn: number;
   }> {
     const response = await fetch(
-      `${this.config.baseUrl || "https://node.lighthouse.storage"}/api/auth/get_token`,
+      `${this.config.baseUrl || "https://api.lighthouse.storage"}/api/auth/get_token`,
       {
         method: "POST",
         headers: {
