@@ -1,6 +1,6 @@
 # Lighthouse MCP Server - Real SDK Integration
 
-This document describes the integration between the MCP server foundation (task 3) and the unified SDK wrapper (task 2).
+This document describes the integration between the MCP server foundation and the unified SDK wrapper.
 
 ## What Changed
 
@@ -8,7 +8,7 @@ The MCP server has been updated to use the real `LighthouseService` instead of t
 
 ### Key Changes
 
-1. **Real Lighthouse Integration**: The server now uses `LighthouseService` which integrates with the actual Lighthouse SDK wrapper from task 2.
+1. **Real Lighthouse Integration**: The server now uses `LighthouseService` which integrates with the actual Lighthouse SDK wrapper.
 
 2. **Common Interface**: Created `ILighthouseService` interface that both mock and real services implement, ensuring compatibility.
 
