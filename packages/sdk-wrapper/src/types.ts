@@ -1,3 +1,5 @@
+import { AccessCondition } from "@lighthouse-tooling/types";
+
 /**
  * Configuration options for the Lighthouse AI SDK
  */
@@ -40,6 +42,10 @@ export interface UploadOptions {
   onProgress?: (progress: ProgressInfo) => void;
   /** Enable encryption */
   encrypt?: boolean;
+  /** Encryption options */
+  encryptionOptions?: EncryptionOptions;
+  /** Access control conditions */
+  accessConditions?: AccessCondition[];
   /** Custom metadata */
   metadata?: Record<string, any>;
 }
@@ -131,3 +137,127 @@ export interface SDKEvent {
   error?: Error;
   timestamp: Date;
 }
+
+// Encryption and Access Control Types
+
+/**
+ * Key shard for threshold cryptography
+ */
+export interface KeyShard {
+  key: string;
+  index: string;
+}
+
+/**
+ * Generated encryption key with shards
+ */
+export interface GeneratedKey {
+  masterKey: string | null;
+  keyShards: KeyShard[];
+}
+
+/**
+ * Encryption configuration options
+ */
+export interface EncryptionOptions {
+  /** Threshold for key recovery (default: 3) */
+  threshold?: number;
+  /** Total number of key shards (default: 5) */
+  keyCount?: number;
+  /** Use existing key shards instead of generating new ones */
+  keyShards?: KeyShard[];
+  /** Chain type for access conditions */
+  chainType?: ChainType;
+  /** Decryption type */
+  decryptionType?: DecryptionType;
+}
+
+/**
+ * Chain type for blockchain networks
+ */
+export type ChainType = "evm" | "solana";
+
+/**
+ * Decryption type for access control
+ */
+export type DecryptionType = "ADDRESS" | "ACCESS_CONDITIONS";
+
+/**
+ * Return value test for access conditions
+ */
+export interface ReturnValueTest {
+  comparator: "==" | ">=" | "<=" | "!=" | ">" | "<";
+  value: number | string | any[];
+}
+
+/**
+ * EVM-based access condition
+ */
+export interface EVMAccessCondition {
+  id: number;
+  standardContractType: "ERC20" | "ERC721" | "ERC1155" | "Custom" | "";
+  contractAddress?: string;
+  chain: string;
+  method: string;
+  parameters?: any[];
+  returnValueTest: ReturnValueTest;
+  inputArrayType?: string[];
+  outputType?: string;
+}
+
+/**
+ * Solana-based access condition
+ */
+export interface SolanaAccessCondition {
+  id: number;
+  contractAddress?: string;
+  chain: string;
+  method: string;
+  standardContractType: "spl-token" | "";
+  parameters?: any[];
+  pdaInterface: {
+    offset?: number;
+    selector?: string;
+  };
+  returnValueTest: ReturnValueTest;
+}
+
+/**
+ * Enhanced access condition (EVM or Solana)
+ */
+export type EnhancedAccessCondition = EVMAccessCondition | SolanaAccessCondition;
+
+/**
+ * Access control configuration
+ */
+export interface AccessControlConfig {
+  /** Wallet address of the file owner */
+  address: string;
+  /** File CID/hash */
+  cid: string;
+  /** Access conditions */
+  conditions: EnhancedAccessCondition[];
+  /** Condition aggregator (AND/OR logic) */
+  aggregator?: string;
+  /** Chain type */
+  chainType?: ChainType;
+  /** Key shards for encryption */
+  keyShards?: KeyShard[];
+  /** Decryption type */
+  decryptionType?: DecryptionType;
+}
+
+/**
+ * Response from encryption operations
+ */
+export interface EncryptionResponse {
+  isSuccess: boolean;
+  error: string | null;
+  keyShards?: KeyShard[];
+  masterKey?: string;
+}
+
+/**
+ * Authentication token types
+ */
+export type AuthToken = string;

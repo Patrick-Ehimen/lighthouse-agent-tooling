@@ -4,6 +4,8 @@
 
 export { LighthouseUploadFileTool } from "./LighthouseUploadFileTool.js";
 export { LighthouseFetchFileTool } from "./LighthouseFetchFileTool.js";
+export { LighthouseGenerateKeyTool } from "./LighthouseGenerateKeyTool.js";
+export { LighthouseSetupAccessControlTool } from "./LighthouseSetupAccessControlTool.js";
 export * from "./types.js";
 
 import { LighthouseUploadFileTool } from "./LighthouseUploadFileTool.js";

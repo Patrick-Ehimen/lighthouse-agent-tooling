@@ -16,7 +16,12 @@ import { ToolRegistry } from "./registry/ToolRegistry.js";
 import { LighthouseService } from "./services/LighthouseService.js";
 import { ILighthouseService } from "./services/ILighthouseService.js";
 import { MockDatasetService } from "./services/MockDatasetService.js";
-import { LighthouseUploadFileTool, LighthouseFetchFileTool } from "./tools/index.js";
+import {
+  LighthouseUploadFileTool,
+  LighthouseFetchFileTool,
+  LighthouseGenerateKeyTool,
+  LighthouseSetupAccessControlTool,
+} from "./tools/index.js";
 import {
   ListToolsHandler,
   CallToolHandler,
@@ -120,6 +125,11 @@ export class LighthouseMCPServer {
     // Create tool instances with service dependencies
     const uploadFileTool = new LighthouseUploadFileTool(this.lighthouseService, this.logger);
     const fetchFileTool = new LighthouseFetchFileTool(this.lighthouseService, this.logger);
+    const generateKeyTool = new LighthouseGenerateKeyTool(this.lighthouseService, this.logger);
+    const setupAccessControlTool = new LighthouseSetupAccessControlTool(
+      this.lighthouseService,
+      this.logger,
+    );
 
     // Register lighthouse_upload_file tool
     this.registry.register(
@@ -131,6 +141,18 @@ export class LighthouseMCPServer {
     this.registry.register(
       LighthouseFetchFileTool.getDefinition(),
       async (args) => await fetchFileTool.execute(args),
+    );
+
+    // Register lighthouse_generate_key tool
+    this.registry.register(
+      LighthouseGenerateKeyTool.getDefinition(),
+      async (args) => await generateKeyTool.execute(args),
+    );
+
+    // Register lighthouse_setup_access_control tool
+    this.registry.register(
+      LighthouseSetupAccessControlTool.getDefinition(),
+      async (args) => await setupAccessControlTool.execute(args),
     );
 
     // Register lighthouse_create_dataset tool (keeping existing implementation)
