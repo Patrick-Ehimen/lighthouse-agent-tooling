@@ -6,16 +6,16 @@ import { Logger } from "@lighthouse-tooling/shared";
 import { MCPResponse } from "@lighthouse-tooling/types";
 import { ResponseBuilder } from "../utils/response-builder.js";
 import { ILighthouseService } from "../services/ILighthouseService.js";
-import { MockDatasetService } from "../services/MockDatasetService.js";
+import { IDatasetService } from "../services/IDatasetService.js";
 
 export class ListResourcesHandler {
   private lighthouseService: ILighthouseService;
-  private datasetService: MockDatasetService;
+  private datasetService: IDatasetService;
   private logger: Logger;
 
   constructor(
     lighthouseService: ILighthouseService,
-    datasetService: MockDatasetService,
+    datasetService: IDatasetService,
     logger?: Logger,
   ) {
     this.lighthouseService = lighthouseService;
@@ -36,7 +36,7 @@ export class ListResourcesHandler {
       const files = Array.isArray(filesResult) ? filesResult : await filesResult;
 
       // Get all datasets
-      const datasets = this.datasetService.listDatasets();
+      const datasets = await this.datasetService.listDatasets();
 
       // Format as resources
       const resources = [

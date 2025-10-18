@@ -17,13 +17,14 @@
   },
   "dependencies": {
     "@lighthouse-tooling/sdk-wrapper": "workspace:*",
-    "@lighthouse-tooling/types": "workspace:*",
     "@lighthouse-tooling/shared": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.0.4"
+    "@lighthouse-tooling/types": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "eventemitter3": "^5.0.1"
   },
   "devDependencies": {
-    "vitest": "^1.0.0",
     "@vitest/coverage-v8": "^1.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
   }
 }

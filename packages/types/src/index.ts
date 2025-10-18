@@ -33,6 +33,16 @@ export type {
   UploadConfig,
   DatasetConfig,
   DownloadResult,
+  BatchUploadResult,
+  FailedUpload,
+  DatasetVersion,
+  VersionChanges,
+  DatasetSnapshot,
+  DatasetUpdate,
+  DatasetFilter,
+  DatasetStats,
+  VersionDiff,
+  BatchProgress,
 } from "./core.js";
 
 export type {

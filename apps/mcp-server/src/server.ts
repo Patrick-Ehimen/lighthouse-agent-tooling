@@ -15,8 +15,18 @@ import { LIGHTHOUSE_MCP_TOOLS } from "@lighthouse-tooling/types";
 import { ToolRegistry } from "./registry/ToolRegistry.js";
 import { LighthouseService } from "./services/LighthouseService.js";
 import { ILighthouseService } from "./services/ILighthouseService.js";
+import { IDatasetService } from "./services/IDatasetService.js";
+import { DatasetService } from "./services/DatasetService.js";
 import { MockDatasetService } from "./services/MockDatasetService.js";
-import { LighthouseUploadFileTool, LighthouseFetchFileTool } from "./tools/index.js";
+import {
+  LighthouseUploadFileTool,
+  LighthouseFetchFileTool,
+  LighthouseCreateDatasetTool,
+  LighthouseGetDatasetTool,
+  LighthouseListDatasetsTool,
+  LighthouseUpdateDatasetTool,
+  LighthouseDatasetVersionTool,
+} from "./tools/index.js";
 import {
   ListToolsHandler,
   CallToolHandler,
@@ -29,7 +39,7 @@ export class LighthouseMCPServer {
   private server: Server;
   private registry: ToolRegistry;
   private lighthouseService: ILighthouseService;
-  private datasetService: MockDatasetService;
+  private datasetService: IDatasetService;
   private logger: Logger;
   private config: ServerConfig;
 
@@ -43,7 +53,7 @@ export class LighthouseMCPServer {
     config: Partial<ServerConfig> = {},
     services?: {
       lighthouseService?: ILighthouseService;
-      datasetService?: MockDatasetService;
+      datasetService?: IDatasetService;
     },
   ) {
     this.config = { ...DEFAULT_SERVER_CONFIG, ...config };
@@ -81,7 +91,8 @@ export class LighthouseMCPServer {
     if (services?.datasetService) {
       this.datasetService = services.datasetService;
     } else {
-      this.datasetService = new MockDatasetService(this.lighthouseService, this.logger);
+      // Use the new DatasetService with full versioning capabilities
+      this.datasetService = new DatasetService(this.lighthouseService, this.logger);
     }
 
     // Initialize registry
@@ -121,37 +132,49 @@ export class LighthouseMCPServer {
     const uploadFileTool = new LighthouseUploadFileTool(this.lighthouseService, this.logger);
     const fetchFileTool = new LighthouseFetchFileTool(this.lighthouseService, this.logger);
 
-    // Register lighthouse_upload_file tool
+    // Create dataset tool instances with new DatasetService
+    const createDatasetTool = new LighthouseCreateDatasetTool(this.datasetService, this.logger);
+    const getDatasetTool = new LighthouseGetDatasetTool(this.datasetService, this.logger);
+    const listDatasetsTool = new LighthouseListDatasetsTool(this.datasetService, this.logger);
+    const updateDatasetTool = new LighthouseUpdateDatasetTool(this.datasetService, this.logger);
+    const versionTool = new LighthouseDatasetVersionTool(this.datasetService, this.logger);
+
+    // Register file operation tools
     this.registry.register(
       LighthouseUploadFileTool.getDefinition(),
       async (args) => await uploadFileTool.execute(args),
     );
 
-    // Register lighthouse_fetch_file tool
     this.registry.register(
       LighthouseFetchFileTool.getDefinition(),
       async (args) => await fetchFileTool.execute(args),
     );
 
-    // Register lighthouse_create_dataset tool (keeping existing implementation)
-    const datasetTool = LIGHTHOUSE_MCP_TOOLS.find((t) => t.name === "lighthouse_create_dataset");
-    if (datasetTool) {
-      this.registry.register(datasetTool, async (args) => {
-        const result = await this.datasetService.createDataset({
-          name: args.name as string,
-          description: args.description as string | undefined,
-          files: args.files as string[],
-          metadata: args.metadata as Record<string, unknown> | undefined,
-          encrypt: args.encrypt as boolean | undefined,
-        });
+    // Register dataset management tools
+    this.registry.register(
+      LighthouseCreateDatasetTool.getDefinition(),
+      async (args) => await createDatasetTool.execute(args),
+    );
 
-        return {
-          success: true,
-          data: result,
-          executionTime: 0,
-        };
-      });
-    }
+    this.registry.register(
+      LighthouseGetDatasetTool.getDefinition(),
+      async (args) => await getDatasetTool.execute(args),
+    );
+
+    this.registry.register(
+      LighthouseListDatasetsTool.getDefinition(),
+      async (args) => await listDatasetsTool.execute(args),
+    );
+
+    this.registry.register(
+      LighthouseUpdateDatasetTool.getDefinition(),
+      async (args) => await updateDatasetTool.execute(args),
+    );
+
+    this.registry.register(
+      LighthouseDatasetVersionTool.getDefinition(),
+      async (args) => await versionTool.execute(args),
+    );
 
     const registeredTools = this.registry.listTools();
     const registrationTime = Date.now() - startTime;
@@ -204,7 +227,7 @@ export class LighthouseMCPServer {
     // Handle ListResources
     this.server.setRequestHandler(ListResourcesRequestSchema, async () => {
       const files = await this.lighthouseService.listFiles();
-      const datasets = this.datasetService.listDatasets();
+      const datasets = await this.datasetService.listDatasets();
 
       const resources = [
         ...files.map((file) => ({
@@ -344,7 +367,7 @@ export class LighthouseMCPServer {
   /**
    * Get dataset service instance (for testing)
    */
-  getDatasetService(): MockDatasetService {
+  getDatasetService(): IDatasetService {
     return this.datasetService;
   }
 }
