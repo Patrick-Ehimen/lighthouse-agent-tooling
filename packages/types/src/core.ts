@@ -190,3 +190,223 @@ export interface DownloadResult {
   /** Hash of the downloaded file for integrity verification */
   hash?: string;
 }
+
+/**
+ * Result of a batch upload operation
+ */
+export interface BatchUploadResult {
+  /** Total number of files attempted */
+  total: number;
+  /** Number of successful uploads */
+  successful: number;
+  /** Number of failed uploads */
+  failed: number;
+  /** Array of successful upload results */
+  successfulUploads: UploadResult[];
+  /** Array of failed upload attempts */
+  failedUploads: FailedUpload[];
+  /** Total time taken for the batch operation */
+  duration: number;
+  /** Average upload speed in bytes per second */
+  averageSpeed?: number;
+}
+
+/**
+ * Information about a failed upload
+ */
+export interface FailedUpload {
+  /** File path that failed to upload */
+  filePath: string;
+  /** Error message describing the failure */
+  error: string;
+  /** Number of retry attempts made */
+  retryAttempts: number;
+  /** Timestamp when the failure occurred */
+  failedAt: Date;
+}
+
+/**
+ * Dataset version information
+ */
+export interface DatasetVersion {
+  /** Unique version identifier */
+  id: string;
+  /** Parent dataset ID */
+  datasetId: string;
+  /** Semantic version string (e.g., "1.0.0", "2.1.3") */
+  version: string;
+  /** Changes made in this version */
+  changes: VersionChanges;
+  /** Full snapshot of dataset state at this version */
+  snapshot: DatasetSnapshot;
+  /** Timestamp when version was created */
+  createdAt: Date;
+  /** User or system that created this version */
+  createdBy?: string;
+  /** Optional description of changes */
+  changeDescription?: string;
+  /** Tags associated with this version */
+  tags?: string[];
+}
+
+/**
+ * Changes made in a dataset version
+ */
+export interface VersionChanges {
+  /** CIDs of files added in this version */
+  filesAdded: string[];
+  /** CIDs of files removed in this version */
+  filesRemoved: string[];
+  /** CIDs of files modified in this version */
+  filesModified: string[];
+  /** Whether metadata was changed */
+  metadataChanged: boolean;
+  /** Whether configuration was changed */
+  configChanged: boolean;
+  /** Summary of changes */
+  summary: string;
+}
+
+/**
+ * Snapshot of dataset state at a specific version
+ */
+export interface DatasetSnapshot {
+  /** All files in the dataset at this version */
+  files: UploadResult[];
+  /** Metadata at this version */
+  metadata: DatasetMetadata;
+  /** Configuration at this version */
+  config: Partial<DatasetConfig>;
+  /** Size of dataset in bytes */
+  totalSize: number;
+  /** Number of files */
+  fileCount: number;
+}
+
+/**
+ * Update parameters for modifying an existing dataset
+ */
+export interface DatasetUpdate {
+  /** New description for the dataset */
+  description?: string;
+  /** Updated metadata */
+  metadata?: Partial<DatasetMetadata>;
+  /** New version string (if manually specified) */
+  version?: string;
+  /** Files to add to the dataset */
+  addFiles?: string[];
+  /** CIDs of files to remove from the dataset */
+  removeFiles?: string[];
+  /** Tags to add */
+  addTags?: string[];
+  /** Tags to remove */
+  removeTags?: string[];
+}
+
+/**
+ * Filter criteria for listing datasets
+ */
+export interface DatasetFilter {
+  /** Filter by encryption status */
+  encrypted?: boolean;
+  /** Filter by name pattern (regex) */
+  namePattern?: string;
+  /** Filter by tags (datasets must have at least one) */
+  tags?: string[];
+  /** Filter by author */
+  author?: string;
+  /** Filter by category */
+  category?: string;
+  /** Filter by creation date (after) */
+  createdAfter?: Date;
+  /** Filter by creation date (before) */
+  createdBefore?: Date;
+  /** Filter by minimum number of files */
+  minFiles?: number;
+  /** Filter by maximum number of files */
+  maxFiles?: number;
+  /** Pagination limit */
+  limit?: number;
+  /** Pagination offset */
+  offset?: number;
+}
+
+/**
+ * Statistics for a dataset
+ */
+export interface DatasetStats {
+  /** Dataset ID */
+  id: string;
+  /** Dataset name */
+  name: string;
+  /** Total number of files */
+  fileCount: number;
+  /** Total size in bytes */
+  totalSize: number;
+  /** Whether dataset is encrypted */
+  encrypted: boolean;
+  /** Current version */
+  version: string;
+  /** Number of versions */
+  versionCount: number;
+  /** Creation timestamp */
+  createdAt: Date;
+  /** Last update timestamp */
+  updatedAt: Date;
+  /** Last accessed timestamp */
+  lastAccessedAt?: Date;
+  /** Average file size */
+  averageFileSize: number;
+  /** Largest file size */
+  largestFileSize: number;
+  /** Smallest file size */
+  smallestFileSize: number;
+}
+
+/**
+ * Comparison result between two dataset versions
+ */
+export interface VersionDiff {
+  /** Source version */
+  fromVersion: string;
+  /** Target version */
+  toVersion: string;
+  /** Files added between versions */
+  filesAdded: UploadResult[];
+  /** Files removed between versions */
+  filesRemoved: UploadResult[];
+  /** Files that exist in both but were modified */
+  filesModified: UploadResult[];
+  /** Metadata differences */
+  metadataChanges: Record<string, { from: unknown; to: unknown }>;
+  /** Summary of differences */
+  summary: string;
+}
+
+/**
+ * Progress information for batch operations
+ */
+export interface BatchProgress {
+  /** Operation ID for tracking */
+  operationId: string;
+  /** Type of batch operation */
+  operation: "upload" | "download" | "delete";
+  /** Total items to process */
+  total: number;
+  /** Items completed successfully */
+  completed: number;
+  /** Items that failed */
+  failed: number;
+  /** Current item being processed */
+  currentItem?: string;
+  /** Progress percentage (0-100) */
+  percentage: number;
+  /** Estimated time remaining in milliseconds */
+  estimatedTimeRemaining?: number;
+  /** Current processing rate (items per second) */
+  rate?: number;
+  /** Start time */
+  startedAt: Date;
+  /** List of failed items */
+  failures: FailedUpload[];
+}

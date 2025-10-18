@@ -59,6 +59,9 @@ importers:
       "@modelcontextprotocol/sdk":
         specifier: ^1.0.4
         version: 1.18.1
+      eventemitter3:
+        specifier: ^5.0.1
+        version: 5.0.1
     devDependencies:
       "@vitest/coverage-v8":
         specifier: ^1.0.0
