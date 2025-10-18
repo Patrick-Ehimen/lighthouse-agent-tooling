@@ -16,6 +16,7 @@ import { ToolRegistry } from "./registry/ToolRegistry.js";
 import { LighthouseService } from "./services/LighthouseService.js";
 import { ILighthouseService } from "./services/ILighthouseService.js";
 import { MockDatasetService } from "./services/MockDatasetService.js";
+import { LighthouseUploadFileTool, LighthouseFetchFileTool } from "./tools/index.js";
 import {
   ListToolsHandler,
   CallToolHandler,
@@ -116,66 +117,48 @@ export class LighthouseMCPServer {
     const startTime = Date.now();
     this.logger.info("Registering tools...");
 
+    // Create tool instances with service dependencies
+    const uploadFileTool = new LighthouseUploadFileTool(this.lighthouseService, this.logger);
+    const fetchFileTool = new LighthouseFetchFileTool(this.lighthouseService, this.logger);
+
     // Register lighthouse_upload_file tool
-    const uploadTool = LIGHTHOUSE_MCP_TOOLS.find((t) => t.name === "lighthouse_upload_file");
-    if (!uploadTool) throw new Error("Upload tool not found");
-
-    this.registry.register(uploadTool, async (args) => {
-      const result = await this.lighthouseService.uploadFile({
-        filePath: args.filePath as string,
-        encrypt: args.encrypt as boolean | undefined,
-        accessConditions: args.accessConditions as any[] | undefined,
-        tags: args.tags as string[] | undefined,
-      });
-
-      return {
-        success: true,
-        data: result,
-        executionTime: 0,
-      };
-    });
-
-    // Register lighthouse_create_dataset tool
-    const datasetTool = LIGHTHOUSE_MCP_TOOLS.find((t) => t.name === "lighthouse_create_dataset");
-    if (!datasetTool) throw new Error("Dataset tool not found");
-
-    this.registry.register(datasetTool, async (args) => {
-      const result = await this.datasetService.createDataset({
-        name: args.name as string,
-        description: args.description as string | undefined,
-        files: args.files as string[],
-        metadata: args.metadata as Record<string, unknown> | undefined,
-        encrypt: args.encrypt as boolean | undefined,
-      });
-
-      return {
-        success: true,
-        data: result,
-        executionTime: 0,
-      };
-    });
+    this.registry.register(
+      LighthouseUploadFileTool.getDefinition(),
+      async (args) => await uploadFileTool.execute(args),
+    );
 
     // Register lighthouse_fetch_file tool
-    const fetchTool = LIGHTHOUSE_MCP_TOOLS.find((t) => t.name === "lighthouse_fetch_file");
-    if (!fetchTool) throw new Error("Fetch tool not found");
+    this.registry.register(
+      LighthouseFetchFileTool.getDefinition(),
+      async (args) => await fetchFileTool.execute(args),
+    );
 
-    this.registry.register(fetchTool, async (args) => {
-      const result = await this.lighthouseService.fetchFile({
-        cid: args.cid as string,
-        outputPath: args.outputPath as string | undefined,
-        decrypt: args.decrypt as boolean | undefined,
+    // Register lighthouse_create_dataset tool (keeping existing implementation)
+    const datasetTool = LIGHTHOUSE_MCP_TOOLS.find((t) => t.name === "lighthouse_create_dataset");
+    if (datasetTool) {
+      this.registry.register(datasetTool, async (args) => {
+        const result = await this.datasetService.createDataset({
+          name: args.name as string,
+          description: args.description as string | undefined,
+          files: args.files as string[],
+          metadata: args.metadata as Record<string, unknown> | undefined,
+          encrypt: args.encrypt as boolean | undefined,
+        });
+
+        return {
+          success: true,
+          data: result,
+          executionTime: 0,
+        };
       });
+    }
 
-      return {
-        success: true,
-        data: result,
-        executionTime: 0,
-      };
-    });
-
+    const registeredTools = this.registry.listTools();
     const registrationTime = Date.now() - startTime;
+
     this.logger.info("All tools registered", {
-      toolCount: LIGHTHOUSE_MCP_TOOLS.length,
+      toolCount: registeredTools.length,
+      toolNames: registeredTools.map((t) => t.name),
       registrationTime,
     });
 
