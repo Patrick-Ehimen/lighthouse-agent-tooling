@@ -3,7 +3,7 @@
  */
 
 import { LighthouseAISDK } from "@lighthouse-tooling/sdk-wrapper";
-import { UploadResult, DownloadResult, AccessCondition } from "@lighthouse-tooling/types";
+import { UploadResult, DownloadResult, AccessCondition, Dataset } from "@lighthouse-tooling/types";
 import { Logger } from "@lighthouse-tooling/shared";
 import { ILighthouseService, StoredFile } from "./ILighthouseService.js";
 
@@ -11,6 +11,7 @@ export class LighthouseService implements ILighthouseService {
   private sdk: LighthouseAISDK;
   private logger: Logger;
   private fileCache: Map<string, StoredFile> = new Map();
+  private datasetCache: Map<string, Dataset> = new Map();
 
   constructor(apiKey: string, logger?: Logger) {
     this.logger = logger || Logger.getInstance({ level: "info", component: "LighthouseService" });
@@ -364,11 +365,282 @@ export class LighthouseService implements ILighthouseService {
   }
 
   /**
+   * Create a new dataset
+   */
+  async createDataset(params: {
+    name: string;
+    description?: string;
+    filePaths: string[];
+    encrypt?: boolean;
+    accessConditions?: AccessCondition[];
+    tags?: string[];
+    metadata?: Record<string, unknown>;
+  }): Promise<Dataset> {
+    try {
+      this.logger.info("Creating dataset", {
+        name: params.name,
+        fileCount: params.filePaths.length,
+      });
+
+      // Use SDK wrapper to create dataset
+      const datasetInfo = await this.sdk.createDataset(params.filePaths, {
+        name: params.name,
+        description: params.description,
+        encrypt: params.encrypt,
+        metadata: params.metadata,
+        tags: params.tags,
+      });
+
+      // Convert SDK DatasetInfo to Dataset type
+      const dataset: Dataset = {
+        id: datasetInfo.id,
+        name: datasetInfo.name,
+        description: datasetInfo.description || "",
+        files: datasetInfo.files.map((hash) => ({
+          cid: hash,
+          size: 0, // Would need to fetch individual file info
+          encrypted: datasetInfo.encrypted,
+          accessConditions: params.accessConditions,
+          tags: params.tags,
+          uploadedAt: datasetInfo.createdAt,
+          originalPath: "",
+          hash: hash,
+        })),
+        metadata: {
+          author: "AI Agent",
+          license: "Custom",
+          category: "AI Generated",
+          keywords: params.tags,
+          custom: params.metadata,
+        },
+        version: datasetInfo.version,
+        createdAt: datasetInfo.createdAt,
+        updatedAt: datasetInfo.updatedAt,
+        encrypted: datasetInfo.encrypted,
+        accessConditions: params.accessConditions,
+      };
+
+      // Cache the dataset
+      this.datasetCache.set(dataset.id, dataset);
+
+      this.logger.info("Dataset created successfully", {
+        id: dataset.id,
+        name: dataset.name,
+        fileCount: dataset.files.length,
+      });
+
+      return dataset;
+    } catch (error) {
+      this.logger.error("Dataset creation failed", error as Error, { name: params.name });
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing dataset
+   */
+  async updateDataset(params: {
+    datasetId: string;
+    addFiles?: string[];
+    removeFiles?: string[];
+    description?: string;
+    metadata?: Record<string, unknown>;
+    tags?: string[];
+  }): Promise<Dataset> {
+    try {
+      this.logger.info("Updating dataset", { datasetId: params.datasetId });
+
+      // Use SDK wrapper to update dataset
+      const datasetInfo = await this.sdk.updateDataset(params.datasetId, {
+        addFiles: params.addFiles,
+        removeFiles: params.removeFiles,
+        description: params.description,
+        metadata: params.metadata,
+        tags: params.tags,
+      });
+
+      // Convert SDK DatasetInfo to Dataset type
+      const dataset: Dataset = {
+        id: datasetInfo.id,
+        name: datasetInfo.name,
+        description: datasetInfo.description || "",
+        files: datasetInfo.files.map((hash) => ({
+          cid: hash,
+          size: 0, // Would need to fetch individual file info
+          encrypted: datasetInfo.encrypted,
+          tags: params.tags,
+          uploadedAt: datasetInfo.updatedAt,
+          originalPath: "",
+          hash: hash,
+        })),
+        metadata: {
+          author: "AI Agent",
+          license: "Custom",
+          category: "AI Generated",
+          keywords: params.tags,
+          custom: params.metadata,
+        },
+        version: datasetInfo.version,
+        createdAt: datasetInfo.createdAt,
+        updatedAt: datasetInfo.updatedAt,
+        encrypted: datasetInfo.encrypted,
+      };
+
+      // Update cache
+      this.datasetCache.set(dataset.id, dataset);
+
+      this.logger.info("Dataset updated successfully", {
+        id: dataset.id,
+        name: dataset.name,
+        fileCount: dataset.files.length,
+      });
+
+      return dataset;
+    } catch (error) {
+      this.logger.error("Dataset update failed", error as Error, { datasetId: params.datasetId });
+      throw error;
+    }
+  }
+
+  /**
+   * Get dataset by ID
+   */
+  async getDataset(datasetId: string): Promise<Dataset | undefined> {
+    try {
+      // Try cache first
+      const cachedDataset = this.datasetCache.get(datasetId);
+      if (cachedDataset) {
+        return cachedDataset;
+      }
+
+      // Use SDK wrapper to get dataset
+      const datasetInfo = await this.sdk.getDataset(datasetId);
+
+      // Convert SDK DatasetInfo to Dataset type
+      const dataset: Dataset = {
+        id: datasetInfo.id,
+        name: datasetInfo.name,
+        description: datasetInfo.description || "",
+        files: datasetInfo.files.map((hash) => ({
+          cid: hash,
+          size: 0, // Would need to fetch individual file info
+          encrypted: datasetInfo.encrypted,
+          uploadedAt: datasetInfo.createdAt,
+          originalPath: "",
+          hash: hash,
+        })),
+        metadata: {
+          author: "AI Agent",
+          license: "Custom",
+          category: "AI Generated",
+          keywords: datasetInfo.tags,
+          custom: datasetInfo.metadata,
+        },
+        version: datasetInfo.version,
+        createdAt: datasetInfo.createdAt,
+        updatedAt: datasetInfo.updatedAt,
+        encrypted: datasetInfo.encrypted,
+      };
+
+      // Cache it
+      this.datasetCache.set(dataset.id, dataset);
+
+      return dataset;
+    } catch (error) {
+      this.logger.error("Failed to get dataset", error as Error, { datasetId });
+      return undefined;
+    }
+  }
+
+  /**
+   * List all datasets
+   */
+  async listDatasets(params?: { limit?: number; offset?: number }): Promise<{
+    datasets: Dataset[];
+    total: number;
+    hasMore: boolean;
+  }> {
+    try {
+      const limit = params?.limit || 10;
+      const offset = params?.offset || 0;
+
+      // Use SDK wrapper to list datasets
+      const response = await this.sdk.listDatasets(limit, offset);
+
+      const datasets: Dataset[] = response.datasets.map((datasetInfo) => {
+        const dataset: Dataset = {
+          id: datasetInfo.id,
+          name: datasetInfo.name,
+          description: datasetInfo.description || "",
+          files: datasetInfo.files.map((hash) => ({
+            cid: hash,
+            size: 0, // Would need to fetch individual file info
+            encrypted: datasetInfo.encrypted,
+            uploadedAt: datasetInfo.createdAt,
+            originalPath: "",
+            hash: hash,
+          })),
+          metadata: {
+            author: "AI Agent",
+            license: "Custom",
+            category: "AI Generated",
+            keywords: datasetInfo.tags,
+            custom: datasetInfo.metadata,
+          },
+          version: datasetInfo.version,
+          createdAt: datasetInfo.createdAt,
+          updatedAt: datasetInfo.updatedAt,
+          encrypted: datasetInfo.encrypted,
+        };
+
+        // Cache it
+        this.datasetCache.set(dataset.id, dataset);
+
+        return dataset;
+      });
+
+      return {
+        datasets,
+        total: response.total,
+        hasMore: response.hasMore,
+      };
+    } catch (error) {
+      this.logger.error("Failed to list datasets", error as Error);
+      return {
+        datasets: [],
+        total: 0,
+        hasMore: false,
+      };
+    }
+  }
+
+  /**
+   * Delete a dataset
+   */
+  async deleteDataset(datasetId: string, deleteFiles?: boolean): Promise<void> {
+    try {
+      this.logger.info("Deleting dataset", { datasetId, deleteFiles });
+
+      // Use SDK wrapper to delete dataset
+      await this.sdk.deleteDataset(datasetId, deleteFiles);
+
+      // Remove from cache
+      this.datasetCache.delete(datasetId);
+
+      this.logger.info("Dataset deleted successfully", { datasetId });
+    } catch (error) {
+      this.logger.error("Dataset deletion failed", error as Error, { datasetId });
+      throw error;
+    }
+  }
+
+  /**
    * Cleanup resources
    */
   destroy(): void {
     this.sdk.destroy();
     this.fileCache.clear();
+    this.datasetCache.clear();
     this.logger.info("Lighthouse service destroyed");
   }
 }

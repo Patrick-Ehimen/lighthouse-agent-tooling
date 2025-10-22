@@ -2,13 +2,14 @@
  * Mock Lighthouse Service - Simulates Lighthouse file operations
  */
 
-import { UploadResult, DownloadResult, AccessCondition } from "@lighthouse-tooling/types";
+import { UploadResult, DownloadResult, AccessCondition, Dataset } from "@lighthouse-tooling/types";
 import { Logger, FileUtils } from "@lighthouse-tooling/shared";
 import { CIDGenerator } from "../utils/cid-generator.js";
 import { ILighthouseService, StoredFile } from "./ILighthouseService.js";
 
 export class MockLighthouseService implements ILighthouseService {
   private fileStore: Map<string, StoredFile> = new Map();
+  private datasetStore: Map<string, Dataset> = new Map();
   private logger: Logger;
   private maxStorageSize: number;
   private currentStorageSize: number = 0;
@@ -265,8 +266,229 @@ export class MockLighthouseService implements ILighthouseService {
    */
   clear(): void {
     this.fileStore.clear();
+    this.datasetStore.clear();
     this.currentStorageSize = 0;
     this.logger.info("Mock storage cleared");
+  }
+
+  /**
+   * Create a new dataset
+   */
+  async createDataset(params: {
+    name: string;
+    description?: string;
+    filePaths: string[];
+    encrypt?: boolean;
+    accessConditions?: AccessCondition[];
+    tags?: string[];
+    metadata?: Record<string, unknown>;
+  }): Promise<Dataset> {
+    const startTime = Date.now();
+
+    try {
+      this.logger.info("Creating dataset", {
+        name: params.name,
+        fileCount: params.filePaths.length,
+      });
+
+      // Upload all files first
+      const uploadedFiles: UploadResult[] = [];
+      for (const filePath of params.filePaths) {
+        const uploadResult = await this.uploadFile({
+          filePath,
+          encrypt: params.encrypt,
+          accessConditions: params.accessConditions,
+          tags: params.tags,
+        });
+        uploadedFiles.push(uploadResult);
+      }
+
+      // Create dataset
+      const datasetId = `dataset_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const now = new Date();
+
+      const dataset: Dataset = {
+        id: datasetId,
+        name: params.name,
+        description: params.description || "",
+        files: uploadedFiles,
+        metadata: {
+          author: "Mock Service",
+          license: "Custom",
+          category: "Test",
+          keywords: params.tags,
+          custom: params.metadata,
+        },
+        version: "1.0.0",
+        createdAt: now,
+        updatedAt: now,
+        encrypted: params.encrypt || false,
+        accessConditions: params.accessConditions,
+      };
+
+      this.datasetStore.set(datasetId, dataset);
+
+      const executionTime = Date.now() - startTime;
+      this.logger.info("Dataset created successfully", {
+        id: datasetId,
+        name: params.name,
+        fileCount: uploadedFiles.length,
+        executionTime,
+      });
+
+      return dataset;
+    } catch (error) {
+      this.logger.error("Dataset creation failed", error as Error, { name: params.name });
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing dataset
+   */
+  async updateDataset(params: {
+    datasetId: string;
+    addFiles?: string[];
+    removeFiles?: string[];
+    description?: string;
+    metadata?: Record<string, unknown>;
+    tags?: string[];
+  }): Promise<Dataset> {
+    try {
+      this.logger.info("Updating dataset", { datasetId: params.datasetId });
+
+      const dataset = this.datasetStore.get(params.datasetId);
+      if (!dataset) {
+        throw new Error(`Dataset not found: ${params.datasetId}`);
+      }
+
+      // Add new files if specified
+      if (params.addFiles && params.addFiles.length > 0) {
+        for (const filePath of params.addFiles) {
+          const uploadResult = await this.uploadFile({ filePath });
+          dataset.files.push(uploadResult);
+        }
+      }
+
+      // Remove files if specified
+      if (params.removeFiles && params.removeFiles.length > 0) {
+        dataset.files = dataset.files.filter((file) => !params.removeFiles!.includes(file.cid));
+      }
+
+      // Update metadata
+      if (params.description !== undefined) {
+        dataset.description = params.description;
+      }
+
+      if (params.metadata) {
+        dataset.metadata.custom = { ...dataset.metadata.custom, ...params.metadata };
+      }
+
+      if (params.tags) {
+        dataset.metadata.keywords = params.tags;
+      }
+
+      // Update version and timestamp
+      const versionParts = dataset.version.split(".");
+      if (versionParts.length >= 2 && versionParts[1]) {
+        versionParts[1] = String(parseInt(versionParts[1]) + 1);
+        dataset.version = versionParts.join(".");
+      } else {
+        dataset.version = "1.1.0";
+      }
+      dataset.updatedAt = new Date();
+
+      this.datasetStore.set(params.datasetId, dataset);
+
+      this.logger.info("Dataset updated successfully", {
+        id: params.datasetId,
+        name: dataset.name,
+        fileCount: dataset.files.length,
+      });
+
+      return dataset;
+    } catch (error) {
+      this.logger.error("Dataset update failed", error as Error, { datasetId: params.datasetId });
+      throw error;
+    }
+  }
+
+  /**
+   * Get dataset by ID
+   */
+  async getDataset(datasetId: string): Promise<Dataset | undefined> {
+    try {
+      this.logger.info("Retrieving dataset", { datasetId });
+
+      const dataset = this.datasetStore.get(datasetId);
+      if (!dataset) {
+        this.logger.warn("Dataset not found", { datasetId });
+        return undefined;
+      }
+
+      return dataset;
+    } catch (error) {
+      this.logger.error("Failed to get dataset", error as Error, { datasetId });
+      throw error;
+    }
+  }
+
+  /**
+   * List all datasets
+   */
+  async listDatasets(params?: { limit?: number; offset?: number }): Promise<{
+    datasets: Dataset[];
+    total: number;
+    hasMore: boolean;
+  }> {
+    try {
+      const limit = params?.limit || 10;
+      const offset = params?.offset || 0;
+
+      this.logger.info("Listing datasets", { limit, offset });
+
+      const allDatasets = Array.from(this.datasetStore.values());
+      const total = allDatasets.length;
+      const paginatedDatasets = allDatasets.slice(offset, offset + limit);
+
+      return {
+        datasets: paginatedDatasets,
+        total,
+        hasMore: offset + limit < total,
+      };
+    } catch (error) {
+      this.logger.error("Failed to list datasets", error as Error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a dataset
+   */
+  async deleteDataset(datasetId: string, deleteFiles?: boolean): Promise<void> {
+    try {
+      this.logger.info("Deleting dataset", { datasetId, deleteFiles });
+
+      const dataset = this.datasetStore.get(datasetId);
+      if (!dataset) {
+        throw new Error(`Dataset not found: ${datasetId}`);
+      }
+
+      // Optionally delete associated files
+      if (deleteFiles) {
+        for (const file of dataset.files) {
+          this.fileStore.delete(file.cid);
+          this.currentStorageSize -= file.size;
+        }
+      }
+
+      this.datasetStore.delete(datasetId);
+
+      this.logger.info("Dataset deleted successfully", { datasetId });
+    } catch (error) {
+      this.logger.error("Dataset deletion failed", error as Error, { datasetId });
+      throw error;
+    }
   }
 
   /**

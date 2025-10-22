@@ -131,3 +131,65 @@ export interface SDKEvent {
   error?: Error;
   timestamp: Date;
 }
+
+/**
+ * Dataset creation options
+ */
+export interface DatasetOptions {
+  /** Dataset name */
+  name: string;
+  /** Dataset description */
+  description?: string;
+  /** Enable encryption for the dataset */
+  encrypt?: boolean;
+  /** Custom metadata */
+  metadata?: Record<string, any>;
+  /** Tags for organization */
+  tags?: string[];
+  /** Progress callback function */
+  onProgress?: (progress: ProgressInfo) => void;
+}
+
+/**
+ * Dataset information
+ */
+export interface DatasetInfo {
+  /** Dataset ID */
+  id: string;
+  /** Dataset name */
+  name: string;
+  /** Dataset description */
+  description?: string;
+  /** Array of file hashes in the dataset */
+  files: string[];
+  /** Dataset version */
+  version: string;
+  /** Creation timestamp */
+  createdAt: Date;
+  /** Last update timestamp */
+  updatedAt: Date;
+  /** Whether dataset is encrypted */
+  encrypted: boolean;
+  /** Dataset metadata */
+  metadata?: Record<string, any>;
+  /** Tags */
+  tags?: string[];
+  /** Total size in bytes */
+  totalSize: number;
+  /** Number of files */
+  fileCount: number;
+}
+
+/**
+ * List datasets response
+ */
+export interface ListDatasetsResponse {
+  /** Array of dataset information */
+  datasets: DatasetInfo[];
+  /** Total number of datasets */
+  total: number;
+  /** Whether there are more datasets */
+  hasMore: boolean;
+  /** Cursor for pagination */
+  cursor?: string;
+}
