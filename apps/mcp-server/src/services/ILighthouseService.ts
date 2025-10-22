@@ -2,7 +2,7 @@
  * Common interface for Lighthouse services
  */
 
-import { UploadResult, DownloadResult, AccessCondition } from "@lighthouse-tooling/types";
+import { UploadResult, DownloadResult, AccessCondition, Dataset } from "@lighthouse-tooling/types";
 
 export interface StoredFile {
   cid: string;
@@ -75,4 +75,48 @@ export interface ILighthouseService {
    * Clear cache (for testing)
    */
   clear(): void;
+
+  /**
+   * Create a new dataset
+   */
+  createDataset(params: {
+    name: string;
+    description?: string;
+    filePaths: string[];
+    encrypt?: boolean;
+    accessConditions?: AccessCondition[];
+    tags?: string[];
+    metadata?: Record<string, unknown>;
+  }): Promise<Dataset>;
+
+  /**
+   * Update an existing dataset
+   */
+  updateDataset(params: {
+    datasetId: string;
+    addFiles?: string[];
+    removeFiles?: string[];
+    description?: string;
+    metadata?: Record<string, unknown>;
+    tags?: string[];
+  }): Promise<Dataset>;
+
+  /**
+   * Get dataset by ID
+   */
+  getDataset(datasetId: string): Promise<Dataset | undefined>;
+
+  /**
+   * List all datasets
+   */
+  listDatasets(params?: { limit?: number; offset?: number }): Promise<{
+    datasets: Dataset[];
+    total: number;
+    hasMore: boolean;
+  }>;
+
+  /**
+   * Delete a dataset
+   */
+  deleteDataset(datasetId: string, deleteFiles?: boolean): Promise<void>;
 }

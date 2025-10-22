@@ -37,6 +37,9 @@ export type {
   ProgressInfo,
   FileInfo,
   ListFilesResponse,
+  DatasetOptions,
+  DatasetInfo,
+  ListDatasetsResponse,
   SDKEventType,
   SDKEvent,
 } from "./types";
