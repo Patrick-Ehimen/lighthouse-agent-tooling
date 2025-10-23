@@ -12,6 +12,7 @@ export { LighthouseAISDK } from "./LighthouseAISDK";
 // Core managers
 export { AuthenticationManager } from "./auth/AuthenticationManager";
 export { ProgressTracker } from "./progress/ProgressTracker";
+export { EncryptionManager } from "./encryption/EncryptionManager";
 
 // Error handling system
 export {
@@ -39,6 +40,18 @@ export type {
   ListFilesResponse,
   SDKEventType,
   SDKEvent,
+  GeneratedKey,
+  KeyShard,
+  EncryptionOptions,
+  AccessControlConfig,
+  EncryptionResponse,
+  AuthToken,
+  EnhancedAccessCondition,
+  EVMAccessCondition,
+  SolanaAccessCondition,
+  ReturnValueTest,
+  ChainType,
+  DecryptionType,
 } from "./types";
 
 // Error handling types
