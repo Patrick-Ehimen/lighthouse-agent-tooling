@@ -9,7 +9,7 @@ import { EnvLoader } from './config/env-loader.js';
 // Export main server class
 export { LighthouseMCPServer } from './server.js';
 export { ToolRegistry } from './registry/ToolRegistry.js';
-export { MockLighthouseService } from './services/MockLighthouseService.js';
+export { LighthouseService } from './services/LighthouseService.js';
 export { MockDatasetService } from './services/MockDatasetService.js';
 export * from './registry/types.js';
 export * from './config/server-config.js';
@@ -41,6 +41,7 @@ Options:
   --max-storage <bytes>  Set maximum storage size in bytes [default: 1073741824]
   --name <name>          Set server name [default: lighthouse-storage]
   --version <version>    Set server version [default: 0.1.0]
+  --api-key <key>        Set Lighthouse API key (or use LIGHTHOUSE_API_KEY env var)
   --env <path>           Path to .env file [default: .env]
   --show-config          Display current configuration and exit
   --help                 Show this help message
@@ -52,10 +53,12 @@ Environment Variables:
   MAX_STORAGE_SIZE       Maximum storage size in bytes
   ENABLE_METRICS         Enable metrics collection (true/false)
   METRICS_INTERVAL       Metrics collection interval in ms
+  LIGHTHOUSE_API_KEY     Lighthouse API key
 
 Examples:
   node dist/index.js --log-level debug
   node dist/index.js --max-storage 2147483648 --log-level info
+  node dist/index.js --api-key YOUR_API_KEY
   node dist/index.js --env /path/to/.env
   node dist/index.js --show-config
   LOG_LEVEL=debug node dist/index.js
@@ -88,6 +91,10 @@ Examples:
         case '--version':
           i++;
           if (args[i]) config.version = args[i];
+          break;
+        case '--api-key':
+          i++;
+          if (args[i]) config.lighthouseApiKey = args[i];
           break;
         case '--env':
           i++;
