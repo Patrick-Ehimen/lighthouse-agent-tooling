@@ -3,7 +3,7 @@
  * Loads and validates environment variables for server configuration
  */
 
-import { config as loadDotenv } from 'dotenv';
+import { config as loadDotenv } from "dotenv";
 
 /**
  * Environment variable schema
@@ -14,7 +14,7 @@ export interface EnvConfig {
   SERVER_VERSION?: string;
 
   // Logging
-  LOG_LEVEL?: 'debug' | 'info' | 'warn' | 'error';
+  LOG_LEVEL?: "debug" | "info" | "warn" | "error";
   LOG_TO_FILE?: string;
   LOG_FILE_PATH?: string;
 
@@ -42,7 +42,7 @@ export interface EnvConfig {
 export interface ServerConfig {
   name?: string;
   version?: string;
-  logLevel?: 'debug' | 'info' | 'warn' | 'error';
+  logLevel?: "debug" | "info" | "warn" | "error";
   maxStorageSize?: number;
   enableMetrics?: boolean;
   metricsInterval?: number;
@@ -54,10 +54,10 @@ export class EnvLoader {
    */
   static load(envPath?: string): void {
     const result = loadDotenv({ path: envPath });
-    
+
     if (result.error) {
       // .env file not found is OK, we'll use defaults
-      if (result.error.message.includes('ENOENT')) {
+      if (result.error.message.includes("ENOENT")) {
         return;
       }
       throw result.error;
@@ -82,7 +82,7 @@ export class EnvLoader {
 
     // Logging configuration
     if (env.LOG_LEVEL) {
-      const validLevels = ['debug', 'info', 'warn', 'error'];
+      const validLevels = ["debug", "info", "warn", "error"];
       if (validLevels.includes(env.LOG_LEVEL)) {
         config.logLevel = env.LOG_LEVEL as any;
       } else {
@@ -102,7 +102,7 @@ export class EnvLoader {
 
     // Performance configuration
     if (env.ENABLE_METRICS !== undefined) {
-      config.enableMetrics = env.ENABLE_METRICS.toLowerCase() === 'true';
+      config.enableMetrics = env.ENABLE_METRICS.toLowerCase() === "true";
     }
 
     if (env.METRICS_INTERVAL) {
@@ -138,7 +138,7 @@ export class EnvLoader {
   static getBoolean(key: string, defaultValue = false): boolean {
     const value = process.env[key];
     if (value === undefined) return defaultValue;
-    return value.toLowerCase() === 'true';
+    return value.toLowerCase() === "true";
   }
 
   /**
@@ -156,11 +156,11 @@ export class EnvLoader {
    */
   static validateRequired(requiredVars: string[]): void {
     const missing = requiredVars.filter((key) => !process.env[key]);
-    
+
     if (missing.length > 0) {
       throw new Error(
-        `Missing required environment variables: ${missing.join(', ')}\n` +
-        `Please check your .env file or set these variables.`
+        `Missing required environment variables: ${missing.join(", ")}\n` +
+          `Please check your .env file or set these variables.`,
       );
     }
   }
@@ -169,14 +169,22 @@ export class EnvLoader {
    * Display current configuration (for debugging)
    */
   static displayConfig(config: Partial<ServerConfig>): void {
-    console.log('\n📋 Server Configuration:');
-    console.log('  Name:', config.name || 'default');
-    console.log('  Version:', config.version || 'default');
-    console.log('  Log Level:', config.logLevel || 'default');
-    console.log('  Max Storage:', config.maxStorageSize ? `${(config.maxStorageSize / 1024 / 1024).toFixed(2)} MB` : 'default');
-    console.log('  Metrics:', config.enableMetrics !== undefined ? config.enableMetrics : 'default');
-    console.log('  Metrics Interval:', config.metricsInterval ? `${config.metricsInterval / 1000}s` : 'default');
-    console.log('');
+    console.log("\n📋 Server Configuration:");
+    console.log("  Name:", config.name || "default");
+    console.log("  Version:", config.version || "default");
+    console.log("  Log Level:", config.logLevel || "default");
+    console.log(
+      "  Max Storage:",
+      config.maxStorageSize ? `${(config.maxStorageSize / 1024 / 1024).toFixed(2)} MB` : "default",
+    );
+    console.log(
+      "  Metrics:",
+      config.enableMetrics !== undefined ? config.enableMetrics : "default",
+    );
+    console.log(
+      "  Metrics Interval:",
+      config.metricsInterval ? `${config.metricsInterval / 1000}s` : "default",
+    );
+    console.log("");
   }
 }
-
