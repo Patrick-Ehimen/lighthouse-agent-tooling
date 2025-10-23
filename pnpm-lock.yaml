@@ -59,6 +59,9 @@ importers:
       "@modelcontextprotocol/sdk":
         specifier: ^1.0.4
         version: 1.18.1
+      dotenv:
+        specifier: ^16.4.5
+        version: 16.6.1
     devDependencies:
       "@vitest/coverage-v8":
         specifier: ^1.0.0
@@ -332,7 +335,7 @@ packages:
     dependencies:
       "@babel/compat-data": 7.28.4
       "@babel/helper-validator-option": 7.27.1
-      browserslist: 4.26.3
+      browserslist: 4.27.0
       lru-cache: 5.1.1
       semver: 6.3.1
     dev: true
@@ -1270,7 +1273,7 @@ packages:
       "@jridgewell/trace-mapping": 0.3.31
       "@types/node": 20.19.17
       chalk: 4.1.2
-      collect-v8-coverage: 1.0.2
+      collect-v8-coverage: 1.0.3
       exit: 0.1.2
       glob: 7.2.3
       graceful-fs: 4.2.11
@@ -1322,7 +1325,7 @@ packages:
       "@jest/console": 29.7.0
       "@jest/types": 29.6.3
       "@types/istanbul-lib-coverage": 2.0.6
-      collect-v8-coverage: 1.0.2
+      collect-v8-coverage: 1.0.3
     dev: true
 
   /@jest/test-sequencer@29.7.0:
@@ -2847,10 +2850,10 @@ packages:
       }
     dev: true
 
-  /baseline-browser-mapping@2.8.16:
+  /baseline-browser-mapping@2.8.19:
     resolution:
       {
-        integrity: sha512-OMu3BGQ4E7P1ErFsIPpbJh0qvDudM/UuJeHgkAvfWe+0HFJCXh+t/l8L6fVLR55RI/UbKrVLnAXZSVwd9ysWYw==,
+        integrity: sha512-zoKGUdu6vb2jd3YOq0nnhEDQVbPcHhco3UImJrv5dSkvxTc2pl2WjOPsjZXDwPDSl5eghIMuY3R6J9NDKF3KcQ==,
       }
     hasBin: true
     dev: true
@@ -2927,19 +2930,19 @@ packages:
     dependencies:
       fill-range: 7.1.1
 
-  /browserslist@4.26.3:
+  /browserslist@4.27.0:
     resolution:
       {
-        integrity: sha512-lAUU+02RFBuCKQPj/P6NgjlbCnLBMp4UtgTx7vNHd3XSIJF87s9a5rA3aH2yw3GS9DqZAUbOtZdCCiZeVRqt0w==,
+        integrity: sha512-AXVQwdhot1eqLihwasPElhX2tAZiBjWdJ9i/Zcj2S6QYIjkx62OKSfnobkriB81C3l4w0rVy3Nt4jaTBltYEpw==,
       }
     engines: { node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7 }
     hasBin: true
     dependencies:
-      baseline-browser-mapping: 2.8.16
-      caniuse-lite: 1.0.30001750
-      electron-to-chromium: 1.5.237
-      node-releases: 2.0.23
-      update-browserslist-db: 1.1.3(browserslist@4.26.3)
+      baseline-browser-mapping: 2.8.19
+      caniuse-lite: 1.0.30001751
+      electron-to-chromium: 1.5.239
+      node-releases: 2.0.26
+      update-browserslist-db: 1.1.4(browserslist@4.27.0)
     dev: true
 
   /bs-logger@0.2.6:
@@ -3057,10 +3060,10 @@ packages:
     engines: { node: ">=10" }
     dev: true
 
-  /caniuse-lite@1.0.30001750:
+  /caniuse-lite@1.0.30001751:
     resolution:
       {
-        integrity: sha512-cuom0g5sdX6rw00qOoLNSFCJ9/mYIsuSOA+yzpDw8eopiFqcVwQvZHqov0vmEighRxX++cfC0Vg1G+1Iy/mSpQ==,
+        integrity: sha512-A0QJhug0Ly64Ii3eIqHu5X51ebln3k4yTUkY1j8drqpWHVreg/VLijN48cZ1bYPiqOQuqpkIKnzr/Ul8V+p6Cw==,
       }
     dev: true
 
@@ -3232,10 +3235,10 @@ packages:
     engines: { iojs: ">= 1.0.0", node: ">= 0.12.0" }
     dev: true
 
-  /collect-v8-coverage@1.0.2:
+  /collect-v8-coverage@1.0.3:
     resolution:
       {
-        integrity: sha512-lHl4d5/ONEbLlJvaJNtsF/Lz+WvB07u2ycqTYbdrq7UypDXailES4valYb2eWiJFxZlVmpGekfqoxQhzyFdT4Q==,
+        integrity: sha512-1L5aqIkwPfiodaMgQunkF1zRhNqifHBmtbbbxcr6yVxxBnliw4TDOW6NxpO8DJLgJ16OT+Y4ztZqP6p/FtXnAw==,
       }
     dev: true
 
@@ -3701,6 +3704,14 @@ packages:
     engines: { node: ">=12" }
     dev: false
 
+  /dotenv@16.6.1:
+    resolution:
+      {
+        integrity: sha512-uBq4egWHTcTt33a72vpSG0z3HnPuIl6NqYcTrKEg2azoEyl2hpW0zqlxysq2pK9HlDIHyHyakeYaYnSAwd8bow==,
+      }
+    engines: { node: ">=12" }
+    dev: false
+
   /dunder-proto@1.0.1:
     resolution:
       {
@@ -3719,10 +3730,10 @@ packages:
       }
     dev: false
 
-  /electron-to-chromium@1.5.237:
+  /electron-to-chromium@1.5.239:
     resolution:
       {
-        integrity: sha512-icUt1NvfhGLar5lSWH3tHNzablaA5js3HVHacQimfP8ViEBOQv+L7DKEuHdbTZ0SKCO1ogTJTIL1Gwk9S6Qvcg==,
+        integrity: sha512-1y5w0Zsq39MSPmEjHjbizvhYoTaulVtivpxkp5q5kaPmQtsK6/2nvAzGRxNMS9DoYySp9PkW0MAQDwU1m764mg==,
       }
     dev: true
 
@@ -5895,7 +5906,7 @@ packages:
       jest-pnp-resolver: 1.2.3(jest-resolve@29.7.0)
       jest-util: 29.7.0
       jest-validate: 29.7.0
-      resolve: 1.22.10
+      resolve: 1.22.11
       resolve.exports: 2.0.3
       slash: 3.0.0
     dev: true
@@ -5949,7 +5960,7 @@ packages:
       "@types/node": 20.19.17
       chalk: 4.1.2
       cjs-module-lexer: 1.4.3
-      collect-v8-coverage: 1.0.2
+      collect-v8-coverage: 1.0.3
       glob: 7.2.3
       graceful-fs: 4.2.11
       jest-haste-map: 29.7.0
@@ -6743,10 +6754,10 @@ packages:
       }
     dev: true
 
-  /node-releases@2.0.23:
+  /node-releases@2.0.26:
     resolution:
       {
-        integrity: sha512-cCmFDMSm26S6tQSDpBCg/NR8NENrVPhAJSf+XbxBG4rPFaaonlEoE9wHQmun+cls499TQGSb7ZyPBRlzgKfpeg==,
+        integrity: sha512-S2M9YimhSjBSvYnlr5/+umAnPHE++ODwt5e2Ij6FoX45HA/s4vHdkDx1eax2pAPeAOqu4s9b7ppahsyEFdVqQA==,
       }
     dev: true
 
@@ -7551,10 +7562,10 @@ packages:
     engines: { node: ">=10" }
     dev: true
 
-  /resolve@1.22.10:
+  /resolve@1.22.11:
     resolution:
       {
-        integrity: sha512-NPRy+/ncIMeDlTAsuqwKIiferiawhefFJtkNSW0qZJEqMEb+qBt/77B/jGeeek+F0uOeN05CDa6HXbbIgtVX4w==,
+        integrity: sha512-RfqAvLnMl313r7c9oclB1HhUEAezcpLjz95wFH4LVuhk9JF/r22qmVP9AMmOU4vMX7Q8pN8jwNg/CSpdFnMjTQ==,
       }
     engines: { node: ">= 0.4" }
     hasBin: true
@@ -8773,16 +8784,16 @@ packages:
     engines: { node: ">= 0.8" }
     dev: false
 
-  /update-browserslist-db@1.1.3(browserslist@4.26.3):
+  /update-browserslist-db@1.1.4(browserslist@4.27.0):
     resolution:
       {
-        integrity: sha512-UxhIZQ+QInVdunkDAaiazvvT/+fXL5Osr0JZlJulepYu6Jd7qJtDZjlur0emRlT71EN3ScPoE7gvsuIKKNavKw==,
+        integrity: sha512-q0SPT4xyU84saUX+tomz1WLkxUbuaJnR1xWt17M7fJtEJigJeWUNGUqrauFXsHnqev9y9JTRGwk13tFBuKby4A==,
       }
     hasBin: true
     peerDependencies:
       browserslist: ">= 4.21.0"
     dependencies:
-      browserslist: 4.26.3
+      browserslist: 4.27.0
       escalade: 3.2.0
       picocolors: 1.1.1
     dev: true
