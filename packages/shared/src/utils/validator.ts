@@ -229,7 +229,7 @@ export class Validator {
    */
   static validateRequiredFields(
     obj: Record<string, any>,
-    requiredFields: string[]
+    requiredFields: string[],
   ): ValidationResult {
     const missingFields: string[] = [];
 
@@ -258,7 +258,7 @@ export class Validator {
   static validateOrThrow(
     value: any,
     validator: (value: any) => ValidationResult,
-    context?: Record<string, any>
+    context?: Record<string, any>,
   ): any {
     const result = validator(value);
     if (!result.isValid) {

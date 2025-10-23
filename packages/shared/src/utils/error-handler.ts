@@ -29,10 +29,7 @@ export class RetryManager {
   /**
    * Execute an operation with retry logic
    */
-  static async withRetry<T>(
-    operation: () => Promise<T>,
-    config: RetryConfig = {}
-  ): Promise<T> {
+  static async withRetry<T>(operation: () => Promise<T>, config: RetryConfig = {}): Promise<T> {
     const {
       maxRetries = API_RETRY_CONFIG.MAX_RETRIES,
       initialDelay = API_RETRY_CONFIG.INITIAL_DELAY,
@@ -99,13 +96,8 @@ export class LighthouseErrorImpl extends Error implements LighthouseError {
   public readonly context?: Record<string, any>;
   public readonly timestamp: string;
 
-  constructor(
-    code: keyof typeof ERROR_CODES,
-    message?: string,
-    context?: Record<string, any>
-  ) {
-    const errorMessage =
-      message || ERROR_MESSAGES[ERROR_CODES[code]] || "Unknown error";
+  constructor(code: keyof typeof ERROR_CODES, message?: string, context?: Record<string, any>) {
+    const errorMessage = message || ERROR_MESSAGES[ERROR_CODES[code]] || "Unknown error";
     super(errorMessage);
 
     this.name = "LighthouseError";
@@ -152,47 +144,30 @@ export class LighthouseErrorImpl extends Error implements LighthouseError {
  * Error factory functions for common error types
  */
 export class ErrorFactory {
-  static authentication(
-    message?: string,
-    context?: Record<string, any>
-  ): LighthouseError {
+  static authentication(message?: string, context?: Record<string, any>): LighthouseError {
     return new LighthouseErrorImpl("AUTHENTICATION_FAILED", message, context);
   }
 
-  static fileNotFound(
-    filePath: string,
-    context?: Record<string, any>
-  ): LighthouseError {
-    return new LighthouseErrorImpl(
-      "FILE_NOT_FOUND",
-      `File not found: ${filePath}`,
-      { filePath, ...context }
-    );
+  static fileNotFound(filePath: string, context?: Record<string, any>): LighthouseError {
+    return new LighthouseErrorImpl("FILE_NOT_FOUND", `File not found: ${filePath}`, {
+      filePath,
+      ...context,
+    });
   }
 
-  static validation(
-    field: string,
-    value: any,
-    context?: Record<string, any>
-  ): LighthouseError {
-    return new LighthouseErrorImpl(
-      "VALIDATION_ERROR",
-      `Validation failed for field: ${field}`,
-      { field, value, ...context }
-    );
+  static validation(field: string, value: any, context?: Record<string, any>): LighthouseError {
+    return new LighthouseErrorImpl("VALIDATION_ERROR", `Validation failed for field: ${field}`, {
+      field,
+      value,
+      ...context,
+    });
   }
 
-  static network(
-    message?: string,
-    context?: Record<string, any>
-  ): LighthouseError {
+  static network(message?: string, context?: Record<string, any>): LighthouseError {
     return new LighthouseErrorImpl("NETWORK_ERROR", message, context);
   }
 
-  static system(
-    message?: string,
-    context?: Record<string, any>
-  ): LighthouseError {
+  static system(message?: string, context?: Record<string, any>): LighthouseError {
     return new LighthouseErrorImpl("SYSTEM_ERROR", message, context);
   }
 }
@@ -227,8 +202,7 @@ export class GlobalErrorHandler {
   static setup(): void {
     process.on("uncaughtException", this.handleError.bind(this));
     process.on("unhandledRejection", (reason) => {
-      const error =
-        reason instanceof Error ? reason : new Error(String(reason));
+      const error = reason instanceof Error ? reason : new Error(String(reason));
       this.handleError(error);
     });
   }

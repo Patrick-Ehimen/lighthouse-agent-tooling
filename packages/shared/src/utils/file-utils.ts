@@ -60,11 +60,7 @@ export class FileUtils {
         lastModified: stats.mtime,
       };
     } catch (error) {
-      if (
-        error instanceof Error &&
-        "code" in error &&
-        error.code === "ENOENT"
-      ) {
+      if (error instanceof Error && "code" in error && error.code === "ENOENT") {
         throw ErrorFactory.fileNotFound(filePath);
       }
       throw error;
@@ -79,10 +75,7 @@ export class FileUtils {
       const fileBuffer = await fs.readFile(filePath);
       return crypto.createHash("sha256").update(fileBuffer).digest("hex");
     } catch (error) {
-      throw ErrorFactory.system(
-        `Failed to calculate hash for file: ${filePath}`,
-        { error }
-      );
+      throw ErrorFactory.system(`Failed to calculate hash for file: ${filePath}`, { error });
     }
   }
 
@@ -155,7 +148,7 @@ export class FileUtils {
             ErrorFactory.validation("fileSize", fileSize, {
               limit: FILE_SIZE_LIMITS.MAX_FILE_SIZE,
               message: "File exceeds maximum size limit",
-            })
+            }),
           );
           return;
         }
@@ -170,10 +163,7 @@ export class FileUtils {
   /**
    * Create a temporary file with given content
    */
-  static async createTempFile(
-    content: string | Buffer,
-    extension = ".tmp"
-  ): Promise<string> {
+  static async createTempFile(content: string | Buffer, extension = ".tmp"): Promise<string> {
     const tempDir = await fs.mkdtemp(path.join(process.cwd(), "temp-"));
     const tempFile = path.join(tempDir, `file-${Date.now()}${extension}`);
 
@@ -231,10 +221,7 @@ export class FileUtils {
       // Copy the file
       await fs.copyFile(source, destination);
     } catch (error) {
-      throw ErrorFactory.system(
-        `Failed to copy file from ${source} to ${destination}`,
-        { error }
-      );
+      throw ErrorFactory.system(`Failed to copy file from ${source} to ${destination}`, { error });
     }
   }
 
@@ -243,7 +230,7 @@ export class FileUtils {
    */
   static async readFileAsString(
     filePath: string,
-    encoding: BufferEncoding = "utf8"
+    encoding: BufferEncoding = "utf8",
   ): Promise<string> {
     const validation = Validator.validateFilePath(filePath);
     if (!validation.isValid) {
@@ -255,11 +242,7 @@ export class FileUtils {
     try {
       return await fs.readFile(filePath, encoding);
     } catch (error) {
-      if (
-        error instanceof Error &&
-        "code" in error &&
-        error.code === "ENOENT"
-      ) {
+      if (error instanceof Error && "code" in error && error.code === "ENOENT") {
         throw ErrorFactory.fileNotFound(filePath);
       }
       throw ErrorFactory.system(`Failed to read file: ${filePath}`, { error });
@@ -269,10 +252,7 @@ export class FileUtils {
   /**
    * Write content to file with proper error handling
    */
-  static async writeFile(
-    filePath: string,
-    content: string | Buffer
-  ): Promise<void> {
+  static async writeFile(filePath: string, content: string | Buffer): Promise<void> {
     const validation = Validator.validateFilePath(filePath);
     if (!validation.isValid) {
       throw ErrorFactory.validation("filePath", filePath, {
