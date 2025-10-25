@@ -31,19 +31,84 @@
       {
         "command": "lighthouse.vscode.uploadFile",
         "title": "Upload File to Lighthouse",
-        "category": "Lighthouse"
+        "category": "Lighthouse",
+        "icon": "$(cloud-upload)"
       },
       {
         "command": "lighthouse.vscode.createDataset",
         "title": "Create AI Dataset",
-        "category": "Lighthouse"
+        "category": "Lighthouse",
+        "icon": "$(database)"
       },
       {
         "command": "lighthouse.vscode.connectMCP",
         "title": "Connect to MCP Server",
+        "category": "Lighthouse",
+        "icon": "$(plug)"
+      },
+      {
+        "command": "lighthouse.vscode.refreshTree",
+        "title": "Refresh",
+        "category": "Lighthouse",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "lighthouse.vscode.openFile",
+        "title": "Open File",
+        "category": "Lighthouse"
+      },
+      {
+        "command": "lighthouse.vscode.openDataset",
+        "title": "Open Dataset",
         "category": "Lighthouse"
       }
     ],
+    "views": {
+      "explorer": [
+        {
+          "id": "lighthouseFiles",
+          "name": "Lighthouse Storage",
+          "when": "workspaceFolderCount > 0"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "lighthouse.vscode.refreshTree",
+          "when": "view == lighthouseFiles",
+          "group": "navigation"
+        },
+        {
+          "command": "lighthouse.vscode.uploadFile",
+          "when": "view == lighthouseFiles",
+          "group": "navigation"
+        },
+        {
+          "command": "lighthouse.vscode.createDataset",
+          "when": "view == lighthouseFiles",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "lighthouse.vscode.uploadFile",
+          "when": "workspaceFolderCount > 0"
+        },
+        {
+          "command": "lighthouse.vscode.createDataset",
+          "when": "workspaceFolderCount > 0"
+        },
+        {
+          "command": "lighthouse.vscode.connectMCP",
+          "when": "workspaceFolderCount > 0"
+        },
+        {
+          "command": "lighthouse.vscode.refreshTree",
+          "when": "workspaceFolderCount > 0"
+        }
+      ]
+    },
     "configuration": {
       "title": "Lighthouse",
       "properties": {
