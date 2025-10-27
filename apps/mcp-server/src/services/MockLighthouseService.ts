@@ -3,6 +3,7 @@
  */
 
 import { UploadResult, DownloadResult, AccessCondition, Dataset } from "@lighthouse-tooling/types";
+import { EnhancedAccessCondition } from "@lighthouse-tooling/sdk-wrapper";
 import { Logger, FileUtils } from "@lighthouse-tooling/shared";
 import { CIDGenerator } from "../utils/cid-generator.js";
 import { ILighthouseService, StoredFile } from "./ILighthouseService.js";
@@ -259,6 +260,112 @@ export class MockLighthouseService implements ILighthouseService {
       maxSize: this.maxStorageSize,
       utilization: (this.currentStorageSize / this.maxStorageSize) * 100,
     };
+  }
+
+  /**
+   * Mock encryption key generation
+   */
+  async generateEncryptionKey(
+    threshold: number = 3,
+    keyCount: number = 5,
+  ): Promise<{
+    success: boolean;
+    data?: { masterKey: string; keyShards: Array<{ key: string; index: string }> };
+    error?: string;
+  }> {
+    try {
+      this.logger.info("Generating mock encryption key", { threshold, keyCount });
+
+      // Simulate key generation delay
+      await this.simulateDelay(100, 200);
+
+      // Generate mock key shards
+      const keyShards = Array.from({ length: keyCount }, (_, i) => ({
+        key: `mock-shard-${i + 1}-${Math.random().toString(36).slice(2, 10)}`,
+        index: `index-${i + 1}-${Math.random().toString(36).slice(2, 8)}`,
+      }));
+
+      const masterKey = `mock-master-key-${Math.random().toString(36).slice(2, 12)}`;
+
+      this.logger.info("Mock encryption key generated", { keyShardCount: keyShards.length });
+
+      return {
+        success: true,
+        data: {
+          masterKey,
+          keyShards,
+        },
+      };
+    } catch (error) {
+      this.logger.error("Mock key generation failed", error as Error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+
+  /**
+   * Mock access control setup
+   */
+  async setupAccessControl(
+    config: {
+      address: string;
+      cid: string;
+      conditions: EnhancedAccessCondition[];
+      aggregator?: string;
+      chainType?: "evm" | "solana";
+      keyShards?: Array<{ key: string; index: string }>;
+    },
+    authToken: string,
+  ): Promise<{
+    success: boolean;
+    error?: string;
+  }> {
+    try {
+      this.logger.info("Setting up mock access control", {
+        address: config.address,
+        cid: config.cid,
+        conditionCount: config.conditions.length,
+      });
+
+      // Simulate access control setup delay
+      await this.simulateDelay(150, 300);
+
+      // Check if file exists
+      const storedFile = this.fileStore.get(config.cid);
+      if (!storedFile) {
+        return {
+          success: false,
+          error: `File not found: ${config.cid}`,
+        };
+      }
+
+      // Update file with access conditions
+      // Convert enhanced conditions to basic AccessCondition format for storage
+      storedFile.accessConditions = config.conditions.map((condition: any) => ({
+        type: "smart_contract" as any,
+        condition: condition.method || "unknown",
+        value: condition.returnValueTest?.value?.toString() || "0",
+        parameters: { ...condition },
+      }));
+      storedFile.encrypted = true;
+
+      this.logger.info("Mock access control set up successfully", {
+        address: config.address,
+        cid: config.cid,
+      });
+
+      return {
+        success: true,
+      };
+    } catch (error) {
+      this.logger.error("Mock access control setup failed", error as Error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
   }
 
   /**

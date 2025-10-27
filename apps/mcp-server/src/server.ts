@@ -23,6 +23,8 @@ import {
   LighthouseListDatasetsTool,
   LighthouseGetDatasetTool,
   LighthouseUpdateDatasetTool,
+  LighthouseGenerateKeyTool,
+  LighthouseSetupAccessControlTool,
 } from "./tools/index.js";
 import {
   ListToolsHandler,
@@ -131,6 +133,11 @@ export class LighthouseMCPServer {
     const listDatasetsTool = new LighthouseListDatasetsTool(this.lighthouseService, this.logger);
     const getDatasetTool = new LighthouseGetDatasetTool(this.lighthouseService, this.logger);
     const updateDatasetTool = new LighthouseUpdateDatasetTool(this.lighthouseService, this.logger);
+    const generateKeyTool = new LighthouseGenerateKeyTool(this.lighthouseService, this.logger);
+    const setupAccessControlTool = new LighthouseSetupAccessControlTool(
+      this.lighthouseService,
+      this.logger,
+    );
 
     // Register file operation tools
     this.registry.register(
@@ -162,6 +169,17 @@ export class LighthouseMCPServer {
     this.registry.register(
       LighthouseUpdateDatasetTool.getDefinition(),
       async (args) => await updateDatasetTool.execute(args),
+    );
+
+    // Register encryption tools
+    this.registry.register(
+      LighthouseGenerateKeyTool.getDefinition(),
+      async (args) => await generateKeyTool.execute(args),
+    );
+
+    this.registry.register(
+      LighthouseSetupAccessControlTool.getDefinition(),
+      async (args) => await setupAccessControlTool.execute(args),
     );
 
     const registeredTools = this.registry.listTools();

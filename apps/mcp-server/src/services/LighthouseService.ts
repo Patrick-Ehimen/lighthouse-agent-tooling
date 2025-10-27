@@ -2,7 +2,7 @@
  * Real Lighthouse Service - Uses the unified SDK wrapper for actual Lighthouse operations
  */
 
-import { LighthouseAISDK } from "@lighthouse-tooling/sdk-wrapper";
+import { LighthouseAISDK, EnhancedAccessCondition } from "@lighthouse-tooling/sdk-wrapper";
 import { UploadResult, DownloadResult, AccessCondition, Dataset } from "@lighthouse-tooling/types";
 import { Logger } from "@lighthouse-tooling/shared";
 import { ILighthouseService, StoredFile } from "./ILighthouseService.js";
@@ -354,6 +354,136 @@ export class LighthouseService implements ILighthouseService {
       errorMetrics: this.sdk.getErrorMetrics(),
       circuitBreaker: this.sdk.getCircuitBreakerStatus(),
     };
+  }
+
+  /**
+   * Generate encryption key with threshold cryptography
+   */
+  async generateEncryptionKey(
+    threshold: number = 3,
+    keyCount: number = 5,
+  ): Promise<{
+    success: boolean;
+    data?: { masterKey: string; keyShards: Array<{ key: string; index: string }> };
+    error?: string;
+  }> {
+    try {
+      this.logger.info("Generating encryption key", { threshold, keyCount });
+
+      // Check if encryption is available
+      if (!this.sdk.isEncryptionAvailable()) {
+        const error = "Encryption features not available - Kavach SDK not found";
+        this.logger.warn(error);
+        return {
+          success: false,
+          error,
+        };
+      }
+
+      const result = await this.sdk.generateEncryptionKey(threshold, keyCount);
+
+      this.logger.info("Encryption key generated successfully", {
+        keyShardCount: result.keyShards.length,
+      });
+
+      return {
+        success: true,
+        data: {
+          masterKey: result.masterKey || "",
+          keyShards: result.keyShards,
+        },
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      this.logger.error("Failed to generate encryption key", error as Error, {
+        threshold,
+        keyCount,
+      });
+
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+  }
+
+  /**
+   * Setup access control for encrypted files
+   */
+  async setupAccessControl(
+    config: {
+      address: string;
+      cid: string;
+      conditions: EnhancedAccessCondition[];
+      aggregator?: string;
+      chainType?: "evm" | "solana";
+      keyShards?: Array<{ key: string; index: string }>;
+    },
+    authToken: string,
+  ): Promise<{
+    success: boolean;
+    error?: string;
+  }> {
+    try {
+      this.logger.info("Setting up access control", {
+        address: config.address,
+        cid: config.cid,
+        conditionCount: config.conditions.length,
+      });
+
+      // Check if encryption is available
+      if (!this.sdk.isEncryptionAvailable()) {
+        const error = "Encryption features not available - Kavach SDK not found";
+        this.logger.warn(error);
+        return {
+          success: false,
+          error,
+        };
+      }
+
+      const result = await this.sdk.setupAccessControl(
+        {
+          address: config.address,
+          cid: config.cid,
+          conditions: config.conditions,
+          aggregator: config.aggregator,
+          chainType: config.chainType || "evm",
+          keyShards: config.keyShards,
+        },
+        authToken,
+      );
+
+      if (!result.isSuccess) {
+        this.logger.error(
+          "Access control setup failed",
+          new Error(result.error || "Unknown error"),
+        );
+        return {
+          success: false,
+          error: result.error || "Unknown error",
+        };
+      }
+
+      this.logger.info("Access control set up successfully", {
+        address: config.address,
+        cid: config.cid,
+      });
+
+      return {
+        success: true,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      this.logger.error("Failed to setup access control", error as Error, {
+        address: config.address,
+        cid: config.cid,
+      });
+
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
   }
 
   /**

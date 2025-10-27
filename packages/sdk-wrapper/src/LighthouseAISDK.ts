@@ -4,6 +4,7 @@ import { AuthenticationManager } from "./auth/AuthenticationManager";
 import { ProgressTracker } from "./progress/ProgressTracker";
 import { ErrorHandler } from "./errors/ErrorHandler";
 import { CircuitBreaker } from "./errors/CircuitBreaker";
+import { EncryptionManager } from "./encryption/EncryptionManager";
 import {
   LighthouseConfig,
   UploadOptions,
@@ -14,6 +15,13 @@ import {
   DatasetOptions,
   DatasetInfo,
   ListDatasetsResponse,
+  GeneratedKey,
+  KeyShard,
+  EncryptionOptions,
+  AccessControlConfig,
+  EncryptionResponse,
+  AuthToken,
+  EnhancedAccessCondition,
 } from "./types";
 import { generateOperationId, validateFile, createFileInfo } from "./utils/helpers";
 
@@ -55,6 +63,7 @@ export class LighthouseAISDK extends EventEmitter {
   private progress: ProgressTracker;
   private errorHandler: ErrorHandler;
   private circuitBreaker: CircuitBreaker;
+  private encryption: EncryptionManager;
   private config: LighthouseConfig;
 
   constructor(config: LighthouseConfig) {
@@ -67,6 +76,7 @@ export class LighthouseAISDK extends EventEmitter {
       timeout: config.timeout || 30000,
     });
     this.circuitBreaker = new CircuitBreaker();
+    this.encryption = new EncryptionManager();
 
     // Forward authentication events
     this.auth.on("auth:error", (error) => this.emit("auth:error", error));
@@ -91,6 +101,26 @@ export class LighthouseAISDK extends EventEmitter {
     this.circuitBreaker.on("state:open", (event) => this.emit("circuit:open", event));
     this.circuitBreaker.on("state:closed", (event) => this.emit("circuit:closed", event));
     this.circuitBreaker.on("circuit:blocked", (event) => this.emit("circuit:blocked", event));
+
+    // Forward encryption events
+    this.encryption.on("key:generation:start", (event) =>
+      this.emit("encryption:key:generation:start", event),
+    );
+    this.encryption.on("key:generation:success", (event) =>
+      this.emit("encryption:key:generation:success", event),
+    );
+    this.encryption.on("key:generation:error", (event) =>
+      this.emit("encryption:key:generation:error", event),
+    );
+    this.encryption.on("access:control:start", (event) =>
+      this.emit("encryption:access:control:start", event),
+    );
+    this.encryption.on("access:control:success", (event) =>
+      this.emit("encryption:access:control:success", event),
+    );
+    this.encryption.on("access:control:error", (event) =>
+      this.emit("encryption:access:control:error", event),
+    );
   }
 
   /**
@@ -397,6 +427,202 @@ export class LighthouseAISDK extends EventEmitter {
         };
       }, "listFiles");
     }, "listFiles");
+  }
+
+  /**
+   * Generate new encryption key with threshold cryptography
+   *
+   * @param threshold - Minimum number of shards needed for key recovery (default: 3)
+   * @param keyCount - Total number of key shards to generate (default: 5)
+   * @returns Generated master key and key shards
+   *
+   * @example
+   * ```typescript
+   * const keyData = await sdk.generateEncryptionKey(3, 5);
+   * console.log('Master key:', keyData.masterKey);
+   * console.log('Key shards:', keyData.keyShards.length);
+   * ```
+   */
+  async generateEncryptionKey(threshold: number = 3, keyCount: number = 5): Promise<GeneratedKey> {
+    return this.circuitBreaker.execute(async () => {
+      return this.errorHandler.executeWithRetry(async () => {
+        return await this.encryption.generateKey(threshold, keyCount);
+      }, "generateEncryptionKey");
+    }, "generateEncryptionKey");
+  }
+
+  /**
+   * Create key shards from an existing master key
+   *
+   * @param masterKey - Existing master key to shard
+   * @param threshold - Minimum number of shards needed for key recovery (default: 3)
+   * @param keyCount - Total number of key shards to generate (default: 5)
+   * @returns Generated key shards
+   *
+   * @example
+   * ```typescript
+   * const shards = await sdk.shardEncryptionKey(existingKey, 3, 5);
+   * console.log('Generated shards:', shards.keyShards.length);
+   * ```
+   */
+  async shardEncryptionKey(
+    masterKey: string,
+    threshold: number = 3,
+    keyCount: number = 5,
+  ): Promise<{ keyShards: KeyShard[] }> {
+    return this.circuitBreaker.execute(async () => {
+      return this.errorHandler.executeWithRetry(async () => {
+        return await this.encryption.shardKey(masterKey, threshold, keyCount);
+      }, "shardEncryptionKey");
+    }, "shardEncryptionKey");
+  }
+
+  /**
+   * Set up access control conditions for encrypted files
+   *
+   * @param config - Access control configuration
+   * @param authToken - Authentication token (JWT or signed message)
+   * @returns Success status
+   *
+   * @example
+   * ```typescript
+   * const accessConfig = {
+   *   address: '0x...',
+   *   cid: 'QmHash...',
+   *   conditions: [{
+   *     id: 1,
+   *     chain: 'ethereum',
+   *     method: 'balanceOf',
+   *     standardContractType: 'ERC20',
+   *     contractAddress: '0x...',
+   *     returnValueTest: { comparator: '>=', value: '1000000000000000000' },
+   *     parameters: ['0x...user-address']
+   *   }],
+   *   keyShards: generatedKey.keyShards
+   * };
+   *
+   * const result = await sdk.setupAccessControl(accessConfig, jwtToken);
+   * if (result.isSuccess) {
+   *   console.log('Access control set up successfully');
+   * }
+   * ```
+   */
+  async setupAccessControl(
+    config: AccessControlConfig,
+    authToken: AuthToken,
+  ): Promise<EncryptionResponse> {
+    return this.circuitBreaker.execute(async () => {
+      return this.errorHandler.executeWithRetry(async () => {
+        return await this.encryption.setupAccessControl(config, authToken);
+      }, "setupAccessControl");
+    }, "setupAccessControl");
+  }
+
+  /**
+   * Recover master key from key shards using threshold cryptography
+   *
+   * @param keyShards - Array of key shards (minimum threshold required)
+   * @returns Recovered master key or error
+   *
+   * @example
+   * ```typescript
+   * // Need at least 'threshold' number of shards to recover
+   * const result = await sdk.recoverEncryptionKey(availableShards);
+   * if (result.masterKey) {
+   *   console.log('Key recovered successfully');
+   * } else {
+   *   console.error('Recovery failed:', result.error);
+   * }
+   * ```
+   */
+  async recoverEncryptionKey(
+    keyShards: KeyShard[],
+  ): Promise<{ masterKey: string | null; error: string | null }> {
+    return this.circuitBreaker.execute(async () => {
+      return this.errorHandler.executeWithRetry(async () => {
+        return await this.encryption.recoverKey(keyShards);
+      }, "recoverEncryptionKey");
+    }, "recoverEncryptionKey");
+  }
+
+  /**
+   * Share encrypted file access to additional addresses
+   *
+   * @param cid - File CID
+   * @param ownerAddress - File owner address
+   * @param shareToAddress - Address to share with
+   * @param authToken - Authentication token
+   * @returns Success status
+   *
+   * @example
+   * ```typescript
+   * const result = await sdk.shareFileAccess(
+   *   'QmHash...',
+   *   '0x...owner',
+   *   '0x...recipient',
+   *   jwtToken
+   * );
+   * ```
+   */
+  async shareFileAccess(
+    cid: string,
+    ownerAddress: string,
+    shareToAddress: string,
+    authToken: AuthToken,
+  ): Promise<EncryptionResponse> {
+    return this.circuitBreaker.execute(async () => {
+      return this.errorHandler.executeWithRetry(async () => {
+        return await this.encryption.shareToAddress(cid, ownerAddress, shareToAddress, authToken);
+      }, "shareFileAccess");
+    }, "shareFileAccess");
+  }
+
+  /**
+   * Get authentication message for wallet signing (needed for encryption operations)
+   *
+   * @param address - Wallet address
+   * @returns Authentication message to be signed
+   *
+   * @example
+   * ```typescript
+   * const authMsg = await sdk.getEncryptionAuthMessage('0x...');
+   * if (authMsg.message) {
+   *   // Sign this message with user's wallet
+   *   const signature = await wallet.signMessage(authMsg.message);
+   *   const jwt = await sdk.getEncryptionJWT('0x...', signature);
+   * }
+   * ```
+   */
+  async getEncryptionAuthMessage(
+    address: string,
+  ): Promise<{ message: string | null; error: string | null }> {
+    return this.circuitBreaker.execute(async () => {
+      return this.errorHandler.executeWithRetry(async () => {
+        return await this.encryption.getAuthMessage(address);
+      }, "getEncryptionAuthMessage");
+    }, "getEncryptionAuthMessage");
+  }
+
+  /**
+   * Generate JWT token from signed message (for encryption operations)
+   *
+   * @param address - Wallet address
+   * @param signedMessage - Signed authentication message
+   * @returns JWT token
+   */
+  async getEncryptionJWT(address: string, signedMessage: string): Promise<string | null> {
+    return this.circuitBreaker.execute(async () => {
+      return this.errorHandler.executeWithRetry(async () => {
+        return await this.encryption.getJWT(address, signedMessage);
+      }, "getEncryptionJWT");
+    }, "getEncryptionJWT");
+  }
+
+  /**
+   * Check if encryption functionality is available
+   */
+  isEncryptionAvailable(): boolean {
+    return this.encryption.isAvailable();
   }
 
   /**
@@ -785,6 +1011,7 @@ export class LighthouseAISDK extends EventEmitter {
   destroy(): void {
     this.auth.destroy();
     this.progress.cleanup();
+    this.encryption.destroy();
     this.removeAllListeners();
   }
 }

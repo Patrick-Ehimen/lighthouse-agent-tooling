@@ -3,6 +3,7 @@
  */
 
 import { UploadResult, DownloadResult, AccessCondition, Dataset } from "@lighthouse-tooling/types";
+import { EnhancedAccessCondition } from "@lighthouse-tooling/sdk-wrapper";
 
 export interface StoredFile {
   cid: string;
@@ -119,4 +120,34 @@ export interface ILighthouseService {
    * Delete a dataset
    */
   deleteDataset(datasetId: string, deleteFiles?: boolean): Promise<void>;
+
+  /**
+   * Generate encryption key with threshold cryptography
+   */
+  generateEncryptionKey?(
+    threshold?: number,
+    keyCount?: number,
+  ): Promise<{
+    success: boolean;
+    data?: { masterKey: string; keyShards: Array<{ key: string; index: string }> };
+    error?: string;
+  }>;
+
+  /**
+   * Setup access control for encrypted files
+   */
+  setupAccessControl?(
+    config: {
+      address: string;
+      cid: string;
+      conditions: EnhancedAccessCondition[];
+      aggregator?: string;
+      chainType?: "evm" | "solana";
+      keyShards?: Array<{ key: string; index: string }>;
+    },
+    authToken: string,
+  ): Promise<{
+    success: boolean;
+    error?: string;
+  }>;
 }

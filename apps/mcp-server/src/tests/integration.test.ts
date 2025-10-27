@@ -40,13 +40,15 @@ describe("Lighthouse MCP Server Integration", () => {
     const registry = server.getRegistry();
     const tools = registry.listTools();
 
-    expect(tools).toHaveLength(6);
+    expect(tools).toHaveLength(8);
     expect(tools.map((t) => t.name)).toContain("lighthouse_upload_file");
     expect(tools.map((t) => t.name)).toContain("lighthouse_fetch_file");
     expect(tools.map((t) => t.name)).toContain("lighthouse_create_dataset");
     expect(tools.map((t) => t.name)).toContain("lighthouse_list_datasets");
     expect(tools.map((t) => t.name)).toContain("lighthouse_get_dataset");
     expect(tools.map((t) => t.name)).toContain("lighthouse_update_dataset");
+    expect(tools.map((t) => t.name)).toContain("lighthouse_generate_key");
+    expect(tools.map((t) => t.name)).toContain("lighthouse_setup_access_control");
   });
 
   it("should get server stats", async () => {
@@ -57,7 +59,7 @@ describe("Lighthouse MCP Server Integration", () => {
     expect(stats).toHaveProperty("registry");
     expect(stats).toHaveProperty("storage");
     expect(stats).toHaveProperty("datasets");
-    expect(stats.registry.totalTools).toBe(6);
+    expect(stats.registry.totalTools).toBe(8);
   });
 
   it("should handle missing API key", () => {

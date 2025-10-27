@@ -8,6 +8,8 @@ export { LighthouseCreateDatasetTool } from "./LighthouseCreateDatasetTool.js";
 export { LighthouseListDatasetsTool } from "./LighthouseListDatasetsTool.js";
 export { LighthouseGetDatasetTool } from "./LighthouseGetDatasetTool.js";
 export { LighthouseUpdateDatasetTool } from "./LighthouseUpdateDatasetTool.js";
+export { LighthouseGenerateKeyTool } from "./LighthouseGenerateKeyTool.js";
+export { LighthouseSetupAccessControlTool } from "./LighthouseSetupAccessControlTool.js";
 export * from "./types.js";
 
 import { LighthouseUploadFileTool } from "./LighthouseUploadFileTool.js";
@@ -16,6 +18,8 @@ import { LighthouseCreateDatasetTool } from "./LighthouseCreateDatasetTool.js";
 import { LighthouseListDatasetsTool } from "./LighthouseListDatasetsTool.js";
 import { LighthouseGetDatasetTool } from "./LighthouseGetDatasetTool.js";
 import { LighthouseUpdateDatasetTool } from "./LighthouseUpdateDatasetTool.js";
+import { LighthouseGenerateKeyTool } from "./LighthouseGenerateKeyTool.js";
+import { LighthouseSetupAccessControlTool } from "./LighthouseSetupAccessControlTool.js";
 import { MCPToolDefinition } from "@lighthouse-tooling/types";
 
 /**
@@ -29,6 +33,8 @@ export function getAllToolDefinitions(): MCPToolDefinition[] {
     LighthouseListDatasetsTool.getDefinition(),
     LighthouseGetDatasetTool.getDefinition(),
     LighthouseUpdateDatasetTool.getDefinition(),
+    LighthouseGenerateKeyTool.getDefinition(),
+    LighthouseSetupAccessControlTool.getDefinition(),
   ];
 }
 
@@ -42,4 +48,6 @@ export const ToolFactory = {
   LighthouseListDatasetsTool,
   LighthouseGetDatasetTool,
   LighthouseUpdateDatasetTool,
+  LighthouseGenerateKeyTool,
+  LighthouseSetupAccessControlTool,
 } as const;
