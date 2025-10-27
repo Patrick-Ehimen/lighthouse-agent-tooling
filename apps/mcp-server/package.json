@@ -8,7 +8,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "clean": "rm -rf dist",
+    "clean": "rimraf dist",
     "check-types": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
