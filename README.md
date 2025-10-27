@@ -1,4 +1,4 @@
-# lighthouse-agent-tooling
+# Lighthouse Agent Tooling
 
 Lighthouse Agent Tooling – A set of connectors, IDE extensions, and AI-native developer tools to seamlessly integrate Lighthouse into AI-powered workflows. Supports MCP (Model Context Protocol) connectors, Cursor/IDE extensions for pinning and encrypting datasets/models.
 
@@ -11,10 +11,6 @@ This repo uses ESLint (flat config) and Prettier for consistent code quality and
 - Format: `pnpm format`
 
 Pre-commit hooks via Husky run lint-staged to format and lint changed files.
-
-# Lighthouse Agent Tooling
-
-Lighthouse Agent Tooling – A set of connectors, IDE extensions, and AI-native developer tools to seamlessly integrate Lighthouse into AI-powered workflows. Supports MCP (Model Context Protocol) connectors, Cursor/IDE extensions for pinning and encrypting datasets/models.
 
 ## Prerequisites
 
