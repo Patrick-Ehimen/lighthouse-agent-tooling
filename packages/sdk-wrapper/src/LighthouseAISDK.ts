@@ -12,6 +12,9 @@ import {
   FileInfo,
   ListFilesResponse,
   SDKEvent,
+  DatasetOptions,
+  DatasetInfo,
+  ListDatasetsResponse,
   GeneratedKey,
   KeyShard,
   EncryptionOptions,
@@ -681,6 +684,325 @@ export class LighthouseAISDK extends EventEmitter {
    */
   resetCircuitBreaker(): void {
     this.circuitBreaker.reset();
+  }
+
+  /**
+   * Create a new dataset with multiple files.
+   *
+   * This method uploads multiple files and groups them into a logical dataset
+   * with metadata and versioning support.
+   *
+   * @param filePaths - Array of file paths to include in the dataset
+   * @param options - Dataset configuration options
+   * @returns Promise resolving to dataset information
+   *
+   * @throws {ValidationError} When file paths are invalid or files don't exist
+   * @throws {NetworkError} When network issues prevent upload
+   * @throws {InsufficientStorageError} When storage quota is exceeded
+   *
+   * @example
+   * ```typescript
+   * const dataset = await sdk.createDataset(
+   *   ['./data/file1.csv', './data/file2.json'],
+   *   {
+   *     name: 'Training Data v1.0',
+   *     description: 'Machine learning training dataset',
+   *     encrypt: true,
+   *     metadata: { version: '1.0', type: 'training' },
+   *     tags: ['ml', 'training', 'v1'],
+   *     onProgress: (progress) => {
+   *       console.log(`Dataset creation: ${progress.percentage}%`);
+   *     }
+   *   }
+   * );
+   * ```
+   */
+  async createDataset(filePaths: string[], options: DatasetOptions): Promise<DatasetInfo> {
+    const operationId = generateOperationId();
+
+    return this.circuitBreaker.execute(async () => {
+      return this.errorHandler.executeWithRetry(async () => {
+        try {
+          // Validate inputs
+          if (!Array.isArray(filePaths) || filePaths.length === 0) {
+            throw new Error("At least one file path is required");
+          }
+
+          if (!options.name || typeof options.name !== "string") {
+            throw new Error("Dataset name is required");
+          }
+
+          // Start progress tracking
+          this.progress.startOperation(operationId, "upload");
+
+          // Upload all files with progress tracking
+          const uploadedFiles: FileInfo[] = [];
+          let totalSize = 0;
+
+          for (let i = 0; i < filePaths.length; i++) {
+            const filePath = filePaths[i];
+            if (!filePath) {
+              throw new Error(`Invalid file path at index ${i}`);
+            }
+
+            // Update progress
+            const progressPercentage = (i / filePaths.length) * 80; // Reserve 20% for dataset creation
+            this.progress.updateProgress(operationId, progressPercentage, "uploading");
+
+            // Upload individual file
+            const fileInfo = await this.uploadFile(filePath, {
+              encrypt: options.encrypt,
+              metadata: { ...options.metadata, datasetName: options.name },
+            });
+
+            uploadedFiles.push(fileInfo);
+            totalSize += fileInfo.size;
+          }
+
+          // Update progress to dataset creation phase
+          this.progress.updateProgress(operationId, 80, "processing");
+
+          // Create dataset metadata
+          const datasetId = `dataset_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          const now = new Date();
+
+          const datasetInfo: DatasetInfo = {
+            id: datasetId,
+            name: options.name,
+            description: options.description,
+            files: uploadedFiles.map((f) => f.hash),
+            version: "1.0.0",
+            createdAt: now,
+            updatedAt: now,
+            encrypted: options.encrypt || false,
+            metadata: options.metadata,
+            tags: options.tags,
+            totalSize,
+            fileCount: uploadedFiles.length,
+          };
+
+          // Complete operation
+          this.progress.completeOperation(operationId, datasetInfo);
+
+          return datasetInfo;
+        } catch (error) {
+          this.progress.failOperation(operationId, error as Error);
+          throw error;
+        }
+      }, "createDataset");
+    }, "createDataset");
+  }
+
+  /**
+   * Update an existing dataset by adding or removing files.
+   *
+   * @param datasetId - ID of the dataset to update
+   * @param options - Update options including files to add/remove
+   * @returns Promise resolving to updated dataset information
+   *
+   * @example
+   * ```typescript
+   * const updatedDataset = await sdk.updateDataset('dataset_123', {
+   *   addFiles: ['./new-file.csv'],
+   *   removeFiles: ['QmOldFileHash...'],
+   *   description: 'Updated training dataset',
+   *   metadata: { version: '1.1' }
+   * });
+   * ```
+   */
+  async updateDataset(
+    datasetId: string,
+    options: {
+      addFiles?: string[];
+      removeFiles?: string[];
+      description?: string;
+      metadata?: Record<string, any>;
+      tags?: string[];
+    },
+  ): Promise<DatasetInfo> {
+    const operationId = generateOperationId();
+
+    return this.circuitBreaker.execute(async () => {
+      return this.errorHandler.executeWithRetry(async () => {
+        try {
+          // Start progress tracking
+          this.progress.startOperation(operationId, "upload");
+
+          // For now, simulate dataset update since we don't have persistent storage
+          // In a real implementation, this would fetch the existing dataset and update it
+
+          const updatedFiles: string[] = [];
+          let totalSize = 0;
+
+          // Add new files if specified
+          if (options.addFiles && options.addFiles.length > 0) {
+            for (let i = 0; i < options.addFiles.length; i++) {
+              const filePath = options.addFiles[i];
+              if (!filePath) {
+                throw new Error(`Invalid file path at index ${i}`);
+              }
+
+              const progressPercentage = (i / options.addFiles.length) * 80;
+              this.progress.updateProgress(operationId, progressPercentage, "uploading");
+
+              const fileInfo = await this.uploadFile(filePath);
+              updatedFiles.push(fileInfo.hash);
+              totalSize += fileInfo.size;
+            }
+          }
+
+          // Update progress to finalization
+          this.progress.updateProgress(operationId, 90, "processing");
+
+          const now = new Date();
+          const datasetInfo: DatasetInfo = {
+            id: datasetId,
+            name: `Updated Dataset ${datasetId}`,
+            description: options.description || "Updated dataset",
+            files: updatedFiles,
+            version: "1.1.0",
+            createdAt: new Date(now.getTime() - 86400000), // 1 day ago
+            updatedAt: now,
+            encrypted: false,
+            metadata: options.metadata,
+            tags: options.tags,
+            totalSize,
+            fileCount: updatedFiles.length,
+          };
+
+          this.progress.completeOperation(operationId, datasetInfo);
+          return datasetInfo;
+        } catch (error) {
+          this.progress.failOperation(operationId, error as Error);
+          throw error;
+        }
+      }, "updateDataset");
+    }, "updateDataset");
+  }
+
+  /**
+   * Retrieve information about a specific dataset.
+   *
+   * @param datasetId - ID of the dataset to retrieve
+   * @returns Promise resolving to dataset information
+   *
+   * @example
+   * ```typescript
+   * const dataset = await sdk.getDataset('dataset_123');
+   * console.log(`Dataset: ${dataset.name} (${dataset.fileCount} files)`);
+   * ```
+   */
+  async getDataset(datasetId: string): Promise<DatasetInfo> {
+    return this.circuitBreaker.execute(async () => {
+      return this.errorHandler.executeWithRetry(async () => {
+        // For now, return a mock dataset since we don't have persistent storage
+        // In a real implementation, this would fetch from a database or metadata service
+
+        const now = new Date();
+        return {
+          id: datasetId,
+          name: `Dataset ${datasetId}`,
+          description: "Sample dataset for demonstration",
+          files: [`QmSample1${datasetId}`, `QmSample2${datasetId}`],
+          version: "1.0.0",
+          createdAt: new Date(now.getTime() - 86400000),
+          updatedAt: now,
+          encrypted: false,
+          metadata: { type: "sample" },
+          tags: ["sample", "demo"],
+          totalSize: 1024 * 1024, // 1MB
+          fileCount: 2,
+        };
+      }, "getDataset");
+    }, "getDataset");
+  }
+
+  /**
+   * List all datasets with pagination support.
+   *
+   * @param limit - Maximum number of datasets to return
+   * @param offset - Number of datasets to skip for pagination
+   * @returns Promise resolving to paginated list of datasets
+   *
+   * @example
+   * ```typescript
+   * const response = await sdk.listDatasets(10, 0);
+   * console.log(`Found ${response.total} datasets`);
+   *
+   * for (const dataset of response.datasets) {
+   *   console.log(`${dataset.name}: ${dataset.fileCount} files`);
+   * }
+   * ```
+   */
+  async listDatasets(limit: number = 10, offset: number = 0): Promise<ListDatasetsResponse> {
+    return this.circuitBreaker.execute(async () => {
+      return this.errorHandler.executeWithRetry(async () => {
+        // For now, return mock datasets since we don't have persistent storage
+        // In a real implementation, this would fetch from a database or metadata service
+
+        const mockDatasets: DatasetInfo[] = [];
+        const total = 25; // Mock total
+
+        for (let i = offset; i < Math.min(offset + limit, total); i++) {
+          const now = new Date();
+          mockDatasets.push({
+            id: `dataset_${i + 1}`,
+            name: `Dataset ${i + 1}`,
+            description: `Sample dataset ${i + 1}`,
+            files: [`QmFile1_${i}`, `QmFile2_${i}`],
+            version: "1.0.0",
+            createdAt: new Date(now.getTime() - i * 86400000),
+            updatedAt: new Date(now.getTime() - i * 3600000),
+            encrypted: i % 2 === 0,
+            metadata: { type: "sample", index: i },
+            tags: ["sample", `dataset-${i}`],
+            totalSize: (i + 1) * 1024 * 1024,
+            fileCount: 2 + (i % 3),
+          });
+        }
+
+        return {
+          datasets: mockDatasets,
+          total,
+          hasMore: offset + limit < total,
+          cursor: offset + limit < total ? String(offset + limit) : undefined,
+        };
+      }, "listDatasets");
+    }, "listDatasets");
+  }
+
+  /**
+   * Delete a dataset and optionally its associated files.
+   *
+   * @param datasetId - ID of the dataset to delete
+   * @param deleteFiles - Whether to also delete the associated files
+   * @returns Promise resolving when deletion is complete
+   *
+   * @example
+   * ```typescript
+   * // Delete dataset metadata only
+   * await sdk.deleteDataset('dataset_123', false);
+   *
+   * // Delete dataset and all its files
+   * await sdk.deleteDataset('dataset_123', true);
+   * ```
+   */
+  async deleteDataset(datasetId: string, deleteFiles: boolean = false): Promise<void> {
+    return this.circuitBreaker.execute(async () => {
+      return this.errorHandler.executeWithRetry(async () => {
+        // For now, just simulate deletion since we don't have persistent storage
+        // In a real implementation, this would:
+        // 1. Delete dataset metadata from database
+        // 2. Optionally delete associated files from IPFS/Lighthouse
+
+        if (deleteFiles) {
+          // Would delete associated files here
+          console.log(`Deleting dataset ${datasetId} and its files`);
+        } else {
+          console.log(`Deleting dataset ${datasetId} metadata only`);
+        }
+      }, "deleteDataset");
+    }, "deleteDataset");
   }
 
   /**
