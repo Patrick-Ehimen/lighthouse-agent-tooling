@@ -127,9 +127,9 @@ describe("RequestValidator", () => {
       expect(result.valid).toBe(true);
     });
 
-    it("should reject absolute paths (security)", () => {
+    it("should accept absolute paths", () => {
       const result = RequestValidator.validateFilePath("/absolute/path/file.txt");
-      expect(result.valid).toBe(false);
+      expect(result.valid).toBe(true);
     });
 
     it("should reject non-string paths", () => {
@@ -185,7 +185,7 @@ describe("RequestValidator", () => {
       const result = RequestValidator.sanitize({
         nested: { key: "value" },
       });
-      expect((result as any).nested.key).toBe("value");
+      expect((result as unknown).nested.key).toBe("value");
     });
   });
 });

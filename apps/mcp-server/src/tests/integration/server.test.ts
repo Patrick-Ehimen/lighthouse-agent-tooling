@@ -86,12 +86,13 @@ describe("LighthouseMCPServer Integration", () => {
       const result = await registry.executeTool("lighthouse_create_dataset", {
         name: "Integration Test Dataset",
         description: "Created during integration test",
-        files: [testFilePath],
+        filePaths: [testFilePath],
       });
 
       expect(result.success).toBe(true);
       expect(result.data).toBeDefined();
-      expect((result.data as any).id).toBeDefined();
+      expect((result.data as any).dataset).toBeDefined();
+      expect((result.data as any).dataset.id).toBeDefined();
     });
 
     it("should execute fetch tool after upload", async () => {
@@ -172,7 +173,7 @@ describe("LighthouseMCPServer Integration", () => {
       const datasetResult = await registry.executeTool("lighthouse_create_dataset", {
         name: "E2E Test Dataset",
         description: "End-to-end test dataset",
-        files: [file1, file2],
+        filePaths: [file1, file2],
         encrypt: true,
         metadata: {
           author: "Test Suite",
@@ -182,7 +183,7 @@ describe("LighthouseMCPServer Integration", () => {
 
       expect(datasetResult.success).toBe(true);
 
-      const dataset = datasetResult.data as any;
+      const dataset = (datasetResult.data as any).dataset;
       expect(dataset.id).toBeDefined();
       expect(dataset.name).toBe("E2E Test Dataset");
       expect(dataset.files).toHaveLength(2);

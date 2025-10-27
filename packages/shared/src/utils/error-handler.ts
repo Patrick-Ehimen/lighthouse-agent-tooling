@@ -102,7 +102,7 @@ export class LighthouseErrorImpl extends Error implements LighthouseError {
 
     this.name = "LighthouseError";
     this.code = ERROR_CODES[code];
-    this.category = this.determineCategory(this.code);
+    this.category = LighthouseErrorImpl.determineCategory(this.code);
     this.recoverable = RECOVERABLE_ERROR_CODES.includes(this.code as any);
     this.context = context;
     this.timestamp = new Date().toISOString();
@@ -113,7 +113,7 @@ export class LighthouseErrorImpl extends Error implements LighthouseError {
     }
   }
 
-  private determineCategory(code: string): string {
+  private static determineCategory(code: string): string {
     if (code.startsWith("AUTH_")) return "authentication";
     if (code.startsWith("FILE_")) return "file_operation";
     if (code.startsWith("NET_")) return "network";

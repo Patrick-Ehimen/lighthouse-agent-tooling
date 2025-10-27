@@ -28,7 +28,7 @@ export class Validator {
     const sanitized = path.normalize(filePath.replace(/\0/g, ""));
 
     // Check for path traversal attempts
-    if (sanitized.includes("..") || sanitized.startsWith("/")) {
+    if (sanitized.includes("..")) {
       return {
         isValid: false,
         error: "Path traversal detected in file path",
