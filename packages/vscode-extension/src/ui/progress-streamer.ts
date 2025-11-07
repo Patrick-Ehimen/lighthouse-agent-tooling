@@ -148,48 +148,51 @@ export class VSCodeProgressStreamer implements ProgressStreamer {
       throw new Error(`Progress stream ${operationId} is already active`);
     }
 
-    return new Promise<unknown>((resolve, reject) => {
-      vscode.window.withProgress(
-        {
-          location: vscode.ProgressLocation.Notification,
-          title,
-          cancellable: true,
-        },
-        (progress, token) => {
-          const stream = new VSCodeProgressStream(
-            operationId,
-            title,
-            progress,
-            token,
-            resolve,
-            reject,
-          );
-          this.activeStreams.set(operationId, stream);
+    // Create stream first with temp values
+    const stream = new VSCodeProgressStream(
+      operationId,
+      title,
+      { report: () => {} } as any,
+      { onCancellationRequested: () => ({ dispose: () => {} }) } as any,
+      () => {},
+      () => {},
+    );
 
-          // Clean up when completed
-          const cleanup = () => {
-            this.activeStreams.delete(operationId);
+    this.activeStreams.set(operationId, stream);
+
+    // Start progress UI after stream is created
+    vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title,
+        cancellable: true,
+      },
+      (progress, token) => {
+        return new Promise<unknown>((resolve, reject) => {
+          // Update the stream with actual progress and token
+          (stream as any).progress = progress;
+          (stream as any).token = token;
+
+          // Wire up resolve/reject to clean up
+          const cleanup = () => this.activeStreams.delete(operationId);
+          const origResolve = (stream as any).resolve;
+          const origReject = (stream as any).reject;
+
+          (stream as any).resolve = (val?: unknown) => {
+            cleanup();
+            origResolve(val);
+            resolve(val);
           };
+          (stream as any).reject = (err?: unknown) => {
+            cleanup();
+            origReject(err);
+            reject(err);
+          };
+        });
+      },
+    );
 
-          return new Promise<unknown>((streamResolve, streamReject) => {
-            const originalResolve = stream["resolve"];
-            const originalReject = stream["reject"];
-
-            stream["resolve"] = (value?: unknown) => {
-              cleanup();
-              originalResolve(value);
-              streamResolve(value);
-            };
-
-            stream["reject"] = (reason?: unknown) => {
-              cleanup();
-              originalReject(reason);
-              streamReject(reason);
-            };
-          });
-        },
-      );
-    }) as unknown as ProgressStream;
+    return stream;
   }
 
   /**

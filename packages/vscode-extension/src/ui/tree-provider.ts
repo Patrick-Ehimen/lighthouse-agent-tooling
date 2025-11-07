@@ -188,26 +188,29 @@ export class VSCodeTreeProvider implements vscode.TreeDataProvider<LighthouseTre
    */
   private async loadFiles(): Promise<any[]> {
     try {
-      // This would be implemented in the SDK
-      // For now, return mock data
-      return [
-        {
-          hash: "QmExample1",
-          name: "example1.txt",
-          size: "1.2 KB",
-          uploadedAt: new Date().toISOString(),
-        },
-        {
-          hash: "QmExample2",
-          name: "example2.json",
-          size: "3.4 KB",
-          uploadedAt: new Date().toISOString(),
-        },
-      ];
+      // Use the actual SDK listFiles method to get real uploaded files
+      const response = await this.sdk.listFiles(100, 0); // Get up to 100 files
+      return response.files.map((file) => ({
+        hash: file.hash,
+        name: file.name,
+        size: this.formatBytes(file.size),
+        uploadedAt: file.uploadedAt,
+      }));
     } catch (error) {
       console.error("Error loading files:", error);
       return [];
     }
+  }
+
+  /**
+   * Format bytes to human-readable string
+   */
+  private formatBytes(bytes: number): string {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   }
 
   /**

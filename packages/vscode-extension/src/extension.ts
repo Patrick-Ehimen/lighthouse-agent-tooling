@@ -28,12 +28,12 @@ export class LighthouseVSCodeExtension {
   constructor(private context: vscode.ExtensionContext) {
     // Initialize core components
     const config = vscode.workspace.getConfiguration("lighthouse.vscode");
-    const apiKey = config.get<string>("apiKey") || "test-key"; // Default for testing
+    const apiKey = config.get<string>("apiKey") || "";
 
     this.sdk = new LighthouseAISDK({
       apiKey,
-      maxRetries: 3,
-      timeout: 30000,
+      maxRetries: 5, // Increased retries
+      timeout: 180000, // Increased to 3 minutes for better reliability
     });
     this.commandRegistry = new VSCodeCommandRegistry(context);
     this.progressStreamer = new VSCodeProgressStreamer();
@@ -59,6 +59,27 @@ export class LighthouseVSCodeExtension {
     }
 
     try {
+      // Validate API key is set
+      const config = vscode.workspace.getConfiguration("lighthouse.vscode");
+      const apiKey = config.get<string>("apiKey");
+
+      if (!apiKey || apiKey.trim() === "") {
+        vscode.window
+          .showWarningMessage(
+            "Lighthouse API key not set. Please configure your API key in settings.",
+            "Set API Key",
+          )
+          .then((selection) => {
+            if (selection === "Set API Key") {
+              vscode.commands.executeCommand(
+                "workbench.action.openSettings",
+                "lighthouse.vscode.apiKey",
+              );
+            }
+          });
+        // Continue activation but warn user
+      }
+
       // Initialize core components
       await this.extensionCore.initialize();
       await this.statusBar.initialize();
@@ -128,6 +149,10 @@ export class LighthouseVSCodeExtension {
         id: "lighthouse.vscode.openDataset",
         handler: this.handleOpenDataset.bind(this),
       },
+      {
+        id: "lighthouse.vscode.testConnection",
+        handler: this.handleTestConnection.bind(this),
+      },
     ];
 
     commands.forEach(({ id, handler }) => {
@@ -168,6 +193,26 @@ export class LighthouseVSCodeExtension {
    */
   private async handleUploadFile(): Promise<void> {
     try {
+      // First, validate API key is configured
+      const config = vscode.workspace.getConfiguration("lighthouse.vscode");
+      const apiKey = config.get<string>("apiKey");
+
+      if (!apiKey || apiKey.trim() === "") {
+        const selection = await vscode.window.showErrorMessage(
+          "Lighthouse API key is required to upload files. Please configure your API key first.",
+          "Set API Key",
+          "Cancel",
+        );
+
+        if (selection === "Set API Key") {
+          await vscode.commands.executeCommand(
+            "workbench.action.openSettings",
+            "lighthouse.vscode.apiKey",
+          );
+        }
+        return;
+      }
+
       const fileUri = await vscode.window.showOpenDialog({
         canSelectFiles: true,
         canSelectFolders: false,
@@ -220,9 +265,25 @@ export class LighthouseVSCodeExtension {
         throw error;
       }
     } catch (error) {
-      vscode.window.showErrorMessage(
-        `Failed to upload file: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      let userMessage = `Failed to upload file: ${errorMessage}`;
+
+      // Provide helpful messages for common errors
+      if (errorMessage.includes("timeout") || errorMessage.includes("ETIMEDOUT")) {
+        userMessage = `Upload timed out. This may be due to:
+• Large file size (try uploading smaller files)
+• Slow network connection
+• Lighthouse server issues
+• Firewall or proxy blocking the connection
+
+Try again with a smaller file or check your network connection.`;
+      } else if (errorMessage.includes("API key")) {
+        userMessage = `Invalid API key. Please check your Lighthouse API key in settings.`;
+      } else if (errorMessage.includes("ENOTFOUND") || errorMessage.includes("ECONNREFUSED")) {
+        userMessage = `Cannot connect to Lighthouse servers. Please check your internet connection.`;
+      }
+
+      vscode.window.showErrorMessage(userMessage);
     }
   }
 
@@ -231,6 +292,26 @@ export class LighthouseVSCodeExtension {
    */
   private async handleCreateDataset(): Promise<void> {
     try {
+      // First, validate API key is configured
+      const config = vscode.workspace.getConfiguration("lighthouse.vscode");
+      const apiKey = config.get<string>("apiKey");
+
+      if (!apiKey || apiKey.trim() === "") {
+        const selection = await vscode.window.showErrorMessage(
+          "Lighthouse API key is required to create datasets. Please configure your API key first.",
+          "Set API Key",
+          "Cancel",
+        );
+
+        if (selection === "Set API Key") {
+          await vscode.commands.executeCommand(
+            "workbench.action.openSettings",
+            "lighthouse.vscode.apiKey",
+          );
+        }
+        return;
+      }
+
       const name = await vscode.window.showInputBox({
         prompt: "Enter dataset name",
         placeHolder: "my-ai-dataset",
@@ -380,6 +461,26 @@ export class LighthouseVSCodeExtension {
    */
   private async handleOpenFile(fileData: unknown): Promise<void> {
     try {
+      // First, validate API key is configured
+      const config = vscode.workspace.getConfiguration("lighthouse.vscode");
+      const apiKey = config.get<string>("apiKey");
+
+      if (!apiKey || apiKey.trim() === "") {
+        const selection = await vscode.window.showErrorMessage(
+          "Lighthouse API key is required to download files. Please configure your API key first.",
+          "Set API Key",
+          "Cancel",
+        );
+
+        if (selection === "Set API Key") {
+          await vscode.commands.executeCommand(
+            "workbench.action.openSettings",
+            "lighthouse.vscode.apiKey",
+          );
+        }
+        return;
+      }
+
       // Type guard for file data
       if (!fileData || typeof fileData !== "object" || !("hash" in fileData)) {
         vscode.window.showErrorMessage("Invalid file data");
@@ -519,6 +620,75 @@ export class LighthouseVSCodeExtension {
   }
 
   /**
+   * Handle test connection command
+   */
+  private async handleTestConnection(): Promise<void> {
+    try {
+      const config = vscode.workspace.getConfiguration("lighthouse.vscode");
+      const apiKey = config.get<string>("apiKey");
+
+      if (!apiKey || apiKey.trim() === "") {
+        vscode.window.showErrorMessage("Please configure your Lighthouse API key first.");
+        return;
+      }
+
+      const operationId = `test-connection-${Date.now()}`;
+      const progress = this.progressStreamer.startProgress(
+        operationId,
+        "Testing Lighthouse connection",
+      );
+
+      try {
+        // Test connection by listing files (lightweight operation)
+        progress.update({ progress: 50, message: "Connecting to Lighthouse..." });
+
+        const result = await this.sdk.listFiles(1, 0); // Just get 1 file to test connection
+
+        progress.complete(result);
+        this.statusBar.showSuccess("Connection test successful");
+
+        vscode.window.showInformationMessage(
+          `✅ Connection successful! Found ${result.total} files in your account.`,
+          "OK",
+        );
+      } catch (error) {
+        progress.fail(error as Error);
+        this.statusBar.showError("Connection test failed");
+
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        let diagnosticInfo = `❌ Connection test failed: ${errorMessage}\n\n`;
+
+        if (errorMessage.includes("timeout") || errorMessage.includes("ETIMEDOUT")) {
+          diagnosticInfo += `🔧 Network Troubleshooting:\n`;
+          diagnosticInfo += `• Check your internet connection\n`;
+          diagnosticInfo += `• Try disabling VPN if you're using one\n`;
+          diagnosticInfo += `• Check firewall settings (port 443 should be open)\n`;
+          diagnosticInfo += `• Try from a different network (mobile hotspot)\n`;
+          diagnosticInfo += `• Contact your network administrator if on corporate network\n\n`;
+          diagnosticInfo += `🌐 Lighthouse servers may be temporarily unavailable.\n`;
+          diagnosticInfo += `Try again in a few minutes.`;
+        } else if (errorMessage.includes("401") || errorMessage.includes("unauthorized")) {
+          diagnosticInfo += `🔑 API Key Issues:\n`;
+          diagnosticInfo += `• Verify your API key is correct\n`;
+          diagnosticInfo += `• Make sure your API key has proper permissions\n`;
+          diagnosticInfo += `• Check if your API key has expired`;
+        } else {
+          diagnosticInfo += `🔍 General troubleshooting:\n`;
+          diagnosticInfo += `• Verify your API key in settings\n`;
+          diagnosticInfo += `• Check Lighthouse service status\n`;
+          diagnosticInfo += `• Try again in a few minutes`;
+        }
+
+        vscode.window.showErrorMessage(diagnosticInfo, { modal: true });
+      }
+    } catch (error) {
+      vscode.window.showErrorMessage(
+        `Failed to test connection: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    }
+  }
+
+  /**
    * Handle configuration changes
    */
   private async handleConfigurationChange(): Promise<void> {
@@ -530,8 +700,8 @@ export class LighthouseVSCodeExtension {
         // Update the SDK configuration with new API key
         this.sdk = new LighthouseAISDK({
           apiKey,
-          maxRetries: 3,
-          timeout: 30000,
+          maxRetries: 5, // Increased retries
+          timeout: 180000, // Increased to 3 minutes for better reliability
         });
         await this.sdk.initialize();
         this.statusBar.showSuccess("Configuration updated");
