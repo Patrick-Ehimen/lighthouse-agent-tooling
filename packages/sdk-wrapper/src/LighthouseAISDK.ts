@@ -1,5 +1,6 @@
 import { EventEmitter } from "eventemitter3";
 import lighthouse from "@lighthouse-web3/sdk";
+import { readFileSync } from "fs";
 import { AuthenticationManager } from "./auth/AuthenticationManager";
 import { ProgressTracker } from "./progress/ProgressTracker";
 import { ErrorHandler } from "./errors/ErrorHandler";
@@ -217,19 +218,70 @@ export class LighthouseAISDK extends EventEmitter {
           // Update progress to uploading phase
           this.progress.updateProgress(operationId, 0, "uploading");
 
-          // Upload file using Lighthouse SDK
-          const uploadResponse = await lighthouse.upload(
-            filePath,
-            apiKey,
-            false, // dealStatus - set to false for now
-            undefined, // endDate
-            (data: any) => {
-              // Convert Lighthouse progress format to our format
-              if (data.loaded !== undefined) {
-                progressCallback(data.loaded, data.total);
+          // Calculate dynamic timeout based on file size (minimum 2 minutes, +30s per MB)
+          const fileSizeMB = fileStats.size / (1024 * 1024);
+          const dynamicTimeout = Math.max(120000, 120000 + fileSizeMB * 30000); // 2 min base + 30s per MB
+
+          // Read file as buffer to avoid fs-extra dependency issues
+          const fileBuffer = readFileSync(filePath);
+
+          // Upload file using Lighthouse SDK buffer method with timeout
+          let uploadResponse;
+          try {
+            const uploadPromise = lighthouse.uploadBuffer(fileBuffer, apiKey);
+            uploadResponse = await this.withTimeout(uploadPromise, dynamicTimeout);
+          } catch (error) {
+            // Try fallback to direct API call if standard method fails
+            const errorMessage = error instanceof Error ? error.message : String(error);
+
+            if (
+              errorMessage.includes("ETIMEDOUT") ||
+              errorMessage.includes("timeout") ||
+              errorMessage.includes("ENOTFOUND") ||
+              errorMessage.includes("ECONNREFUSED")
+            ) {
+              console.warn("Standard upload failed, trying direct API fallback:", errorMessage);
+
+              try {
+                uploadResponse = await this.uploadViDirectAPI(
+                  fileBuffer,
+                  apiKey,
+                  options.fileName || filePath.split("/").pop() || "file",
+                );
+                console.log("Fallback upload successful");
+              } catch (fallbackError) {
+                // If both methods fail, provide comprehensive error message
+                throw new Error(`Upload failed with both methods:
+
+Primary error: ${errorMessage}
+Fallback error: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}
+
+This could be due to:
+• Network connectivity issues
+• Large file size (current: ${(fileStats.size / 1024 / 1024).toFixed(1)}MB)
+• Lighthouse servers being temporarily unavailable
+• Firewall or proxy blocking the connection
+• Invalid API key
+
+Try uploading a smaller file or check your network connection.`);
               }
-            },
-          );
+            } else if (errorMessage.includes("401") || errorMessage.includes("unauthorized")) {
+              throw new Error(`Authentication failed. Please check:
+• Your API key is correct and valid
+• Your API key has upload permissions
+• Your API key hasn't expired
+
+Current API key: ${apiKey.substring(0, 8)}...`);
+            } else if (errorMessage.includes("413") || errorMessage.includes("too large")) {
+              throw new Error(`File too large (${(fileStats.size / 1024 / 1024).toFixed(1)}MB). 
+Maximum file size may be exceeded. Try uploading a smaller file.`);
+            } else if (errorMessage.includes("429") || errorMessage.includes("rate limit")) {
+              throw new Error(`Rate limit exceeded. Please wait a moment before trying again.`);
+            }
+
+            // Re-throw original error if we can't classify it
+            throw error;
+          }
 
           if (!uploadResponse || !uploadResponse.data || !uploadResponse.data.Hash) {
             throw new Error("Invalid upload response from Lighthouse");
@@ -255,6 +307,48 @@ export class LighthouseAISDK extends EventEmitter {
         }
       }, "upload");
     }, "uploadFile");
+  }
+
+  /**
+   * Add timeout wrapper for promises
+   */
+  private withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+    return Promise.race([
+      promise,
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(`Operation timed out after ${timeoutMs}ms`)), timeoutMs),
+      ),
+    ]);
+  }
+
+  /**
+   * Upload file via direct API call as fallback when SDK fails
+   */
+  private async uploadViDirectAPI(
+    fileBuffer: Buffer,
+    apiKey: string,
+    fileName: string,
+  ): Promise<any> {
+    // This is a fallback method that uses direct HTTP calls to api.lighthouse.storage
+    // when the standard SDK fails (usually due to node.lighthouse.storage being down)
+
+    const FormData = eval("require")("form-data");
+    const axios = eval("require")("axios");
+
+    const formData = new FormData();
+    formData.append("file", fileBuffer, fileName);
+
+    const response = await axios.post("https://api.lighthouse.storage/api/v0/add", formData, {
+      headers: {
+        ...formData.getHeaders(),
+        Authorization: `Bearer ${apiKey}`,
+      },
+      timeout: 180000, // 3 minutes
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+    });
+
+    return response;
   }
 
   /**

@@ -1,36 +1,40 @@
 /**
  * Lighthouse VSCode Extension
- * @fileoverview Placeholder for VSCode extension implementation
- *
- * This file serves as a placeholder until the VSCode extension is fully implemented.
- * The extension will provide Lighthouse integration for VSCode.
+ * @fileoverview VSCode extension entry point with AI integration
  */
 
 import * as vscode from "vscode";
+import { LighthouseVSCodeExtension } from "./extension";
+
+let extension: LighthouseVSCodeExtension | undefined;
 
 /**
- * Main extension entry point
- * TODO: Implement VSCode extension functionality
+ * Extension activation
  */
-export function activate(context: vscode.ExtensionContext): void {
-  console.log("Lighthouse VSCode Extension activated (placeholder)");
-
-  // Placeholder command registration
-  const disposable = vscode.commands.registerCommand("lighthouse.hello", () => {
-    vscode.window.showInformationMessage("Lighthouse VSCode Extension (placeholder)");
-  });
-
-  context.subscriptions.push(disposable);
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  try {
+    extension = new LighthouseVSCodeExtension(context);
+    await extension.activate();
+    console.log("Lighthouse VSCode Extension activated successfully");
+  } catch (error) {
+    console.error("Failed to activate Lighthouse VSCode Extension:", error);
+    vscode.window.showErrorMessage(
+      `Failed to activate Lighthouse extension: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
+  }
 }
 
 /**
  * Extension deactivation
- * TODO: Implement cleanup logic
  */
-export function deactivate(): void {
-  console.log("Lighthouse VSCode Extension deactivated (placeholder)");
+export async function deactivate(): Promise<void> {
+  try {
+    if (extension) {
+      await extension.deactivate();
+      extension = undefined;
+    }
+    console.log("Lighthouse VSCode Extension deactivated");
+  } catch (error) {
+    console.error("Error during extension deactivation:", error);
+  }
 }
-
-// Placeholder exports to prevent TypeScript errors
-export const extensionName = "lighthouse-vscode-extension";
-export const version = "0.1.0";

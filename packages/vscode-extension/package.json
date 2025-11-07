@@ -1,7 +1,8 @@
 {
-  "name": "lighthouse-vscode-extension",
+  "name": "lighthouse-extension",
   "displayName": "Lighthouse Storage for VSCode",
   "description": "AI-native Lighthouse storage integration for VSCode with MCP support",
+  "repository": "https://github.com/Patrick-Ehimen/lighthouse-agent-tooling",
   "version": "0.1.0",
   "publisher": "lighthouse-web3",
   "engines": {
@@ -25,25 +26,105 @@
   "activationEvents": [
     "onStartupFinished"
   ],
-  "main": "./dist/extension.js",
+  "main": "./dist/index.js",
   "contributes": {
     "commands": [
       {
         "command": "lighthouse.vscode.uploadFile",
         "title": "Upload File to Lighthouse",
-        "category": "Lighthouse"
+        "category": "Lighthouse",
+        "icon": "$(cloud-upload)"
       },
       {
         "command": "lighthouse.vscode.createDataset",
         "title": "Create AI Dataset",
-        "category": "Lighthouse"
+        "category": "Lighthouse",
+        "icon": "$(database)"
       },
       {
         "command": "lighthouse.vscode.connectMCP",
         "title": "Connect to MCP Server",
+        "category": "Lighthouse",
+        "icon": "$(plug)"
+      },
+      {
+        "command": "lighthouse.vscode.refreshTree",
+        "title": "Refresh",
+        "category": "Lighthouse",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "lighthouse.vscode.openFile",
+        "title": "Open File",
         "category": "Lighthouse"
+      },
+      {
+        "command": "lighthouse.vscode.openDataset",
+        "title": "Open Dataset",
+        "category": "Lighthouse"
+      },
+      {
+        "command": "lighthouse.vscode.testConnection",
+        "title": "Test Connection",
+        "category": "Lighthouse",
+        "icon": "$(debug-disconnect)"
       }
     ],
+    "views": {
+      "explorer": [
+        {
+          "id": "lighthouseFiles",
+          "name": "Lighthouse Storage",
+          "when": "workspaceFolderCount > 0"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "lighthouse.vscode.refreshTree",
+          "when": "view == lighthouseFiles",
+          "group": "navigation"
+        },
+        {
+          "command": "lighthouse.vscode.uploadFile",
+          "when": "view == lighthouseFiles",
+          "group": "navigation"
+        },
+        {
+          "command": "lighthouse.vscode.createDataset",
+          "when": "view == lighthouseFiles",
+          "group": "navigation"
+        },
+        {
+          "command": "lighthouse.vscode.testConnection",
+          "when": "view == lighthouseFiles",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "lighthouse.vscode.uploadFile",
+          "when": "workspaceFolderCount > 0"
+        },
+        {
+          "command": "lighthouse.vscode.createDataset",
+          "when": "workspaceFolderCount > 0"
+        },
+        {
+          "command": "lighthouse.vscode.connectMCP",
+          "when": "workspaceFolderCount > 0"
+        },
+        {
+          "command": "lighthouse.vscode.refreshTree",
+          "when": "workspaceFolderCount > 0"
+        },
+        {
+          "command": "lighthouse.vscode.testConnection",
+          "when": "workspaceFolderCount > 0"
+        }
+      ]
+    },
     "configuration": {
       "title": "Lighthouse",
       "properties": {
@@ -60,9 +141,10 @@
     }
   },
   "scripts": {
-    "build": "tsc -p ./",
-    "dev": "tsc -watch -p ./",
-    "package": "vsce package",
+    "build": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "package": "npm run build -- --production && vsce package --no-dependencies",
+    "build:tsc": "tsc -p ./",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -73,17 +155,20 @@
     "clean": "rimraf dist out"
   },
   "dependencies": {
-    "@lighthouse-tooling/shared": "workspace:*",
     "@lighthouse-tooling/sdk-wrapper": "workspace:*",
-    "@lighthouse-tooling/types": "workspace:*"
+    "@lighthouse-tooling/shared": "workspace:*",
+    "@lighthouse-tooling/types": "workspace:*",
+    "fs-extra": "^11.3.2"
   },
   "devDependencies": {
-    "@types/vscode": "^1.74.0",
+    "@types/fs-extra": "^11.0.4",
+    "@types/jest": "^29.5.5",
     "@types/node": "^20.0.0",
-    "typescript": "^5.0.0",
-    "vsce": "^2.15.0",
+    "@types/vscode": "^1.74.0",
+    "esbuild": "^0.25.11",
     "jest": "^29.7.0",
     "ts-jest": "^29.1.1",
-    "@types/jest": "^29.5.5"
+    "typescript": "^5.0.0",
+    "vsce": "^2.15.0"
   }
 }

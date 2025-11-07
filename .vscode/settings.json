@@ -5,5 +5,7 @@
   "eslint.validate": ["javascript", "typescript", "typescriptreact"],
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
-  }
+  },
+  "lighthouse.vscode.mcpServerUrl": "http://localhost:3000",
+  "lighthouse.vscode.apiKey": "725ca23b.fcd4fe7b53b74a308d7c537fe0e60f79"
 }
