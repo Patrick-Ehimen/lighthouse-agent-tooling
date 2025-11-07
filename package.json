@@ -28,7 +28,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "type": "commonjs",
   "bugs": {
     "url": "https://github.com/Patrick-Ehimen/lighthouse-agent-tooling/issues"
@@ -45,7 +45,8 @@
     "lint-staged": "^15.2.10",
     "jest": "^29.7.0",
     "ts-jest": "^29.1.1",
-    "@types/jest": "^29.5.5"
+    "@types/jest": "^29.5.5",
+    "rimraf": "^6.0.1"
   },
   "pnpm": {
     "overrides": {

@@ -19,6 +19,10 @@ import { MockDatasetService } from "./services/MockDatasetService.js";
 import {
   LighthouseUploadFileTool,
   LighthouseFetchFileTool,
+  LighthouseCreateDatasetTool,
+  LighthouseListDatasetsTool,
+  LighthouseGetDatasetTool,
+  LighthouseUpdateDatasetTool,
   LighthouseGenerateKeyTool,
   LighthouseSetupAccessControlTool,
 } from "./tools/index.js";
@@ -125,55 +129,58 @@ export class LighthouseMCPServer {
     // Create tool instances with service dependencies
     const uploadFileTool = new LighthouseUploadFileTool(this.lighthouseService, this.logger);
     const fetchFileTool = new LighthouseFetchFileTool(this.lighthouseService, this.logger);
+    const createDatasetTool = new LighthouseCreateDatasetTool(this.lighthouseService, this.logger);
+    const listDatasetsTool = new LighthouseListDatasetsTool(this.lighthouseService, this.logger);
+    const getDatasetTool = new LighthouseGetDatasetTool(this.lighthouseService, this.logger);
+    const updateDatasetTool = new LighthouseUpdateDatasetTool(this.lighthouseService, this.logger);
     const generateKeyTool = new LighthouseGenerateKeyTool(this.lighthouseService, this.logger);
     const setupAccessControlTool = new LighthouseSetupAccessControlTool(
       this.lighthouseService,
       this.logger,
     );
 
-    // Register lighthouse_upload_file tool
+    // Register file operation tools
     this.registry.register(
       LighthouseUploadFileTool.getDefinition(),
       async (args) => await uploadFileTool.execute(args),
     );
 
-    // Register lighthouse_fetch_file tool
     this.registry.register(
       LighthouseFetchFileTool.getDefinition(),
       async (args) => await fetchFileTool.execute(args),
     );
 
-    // Register lighthouse_generate_key tool
+    // Register dataset management tools
+    this.registry.register(
+      LighthouseCreateDatasetTool.getDefinition(),
+      async (args) => await createDatasetTool.execute(args),
+    );
+
+    this.registry.register(
+      LighthouseListDatasetsTool.getDefinition(),
+      async (args) => await listDatasetsTool.execute(args),
+    );
+
+    this.registry.register(
+      LighthouseGetDatasetTool.getDefinition(),
+      async (args) => await getDatasetTool.execute(args),
+    );
+
+    this.registry.register(
+      LighthouseUpdateDatasetTool.getDefinition(),
+      async (args) => await updateDatasetTool.execute(args),
+    );
+
+    // Register encryption tools
     this.registry.register(
       LighthouseGenerateKeyTool.getDefinition(),
       async (args) => await generateKeyTool.execute(args),
     );
 
-    // Register lighthouse_setup_access_control tool
     this.registry.register(
       LighthouseSetupAccessControlTool.getDefinition(),
       async (args) => await setupAccessControlTool.execute(args),
     );
-
-    // Register lighthouse_create_dataset tool (keeping existing implementation)
-    const datasetTool = LIGHTHOUSE_MCP_TOOLS.find((t) => t.name === "lighthouse_create_dataset");
-    if (datasetTool) {
-      this.registry.register(datasetTool, async (args) => {
-        const result = await this.datasetService.createDataset({
-          name: args.name as string,
-          description: args.description as string | undefined,
-          files: args.files as string[],
-          metadata: args.metadata as Record<string, unknown> | undefined,
-          encrypt: args.encrypt as boolean | undefined,
-        });
-
-        return {
-          success: true,
-          data: result,
-          executionTime: 0,
-        };
-      });
-    }
 
     const registeredTools = this.registry.listTools();
     const registrationTime = Date.now() - startTime;
