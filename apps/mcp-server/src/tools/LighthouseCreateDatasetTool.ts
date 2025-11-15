@@ -17,6 +17,7 @@ import { ToolResult, ProgressAwareToolResult } from "./types.js";
  * Input parameters for lighthouse_create_dataset tool
  */
 interface CreateDatasetParams {
+  apiKey?: string;
   name: string;
   description?: string;
   filePaths: string[];
@@ -50,6 +51,10 @@ export class LighthouseCreateDatasetTool {
       inputSchema: {
         type: "object",
         properties: {
+          apiKey: {
+            type: "string",
+            description: "Optional API key for per-request authentication",
+          },
           name: {
             type: "string",
             description: "Name of the dataset",

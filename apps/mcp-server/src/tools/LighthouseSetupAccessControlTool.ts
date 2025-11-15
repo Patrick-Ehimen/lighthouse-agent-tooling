@@ -16,6 +16,7 @@ import { ToolResult, ProgressAwareToolResult } from "./types.js";
  * Input parameters for lighthouse_setup_access_control tool
  */
 interface SetupAccessControlParams {
+  apiKey?: string;
   address: string;
   cid: string;
   conditions: EnhancedAccessCondition[];
@@ -50,6 +51,10 @@ export class LighthouseSetupAccessControlTool {
       inputSchema: {
         type: "object",
         properties: {
+          apiKey: {
+            type: "string",
+            description: "Optional API key for per-request authentication",
+          },
           address: {
             type: "string",
             description: "Wallet address of the file owner",
