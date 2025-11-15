@@ -1,0 +1,26 @@
+# Exclude source files (but keep dist)
+src/**
+**/*.ts
+!dist/**
+
+# Exclude tests
+**/__tests__/**
+**/*.test.*
+**/*.spec.*
+jest.config.js
+jest.setup.js
+
+# Exclude build tools
+esbuild.js
+copy-deps.js
+tsconfig.json
+.turbo/**
+
+# Exclude development files
+.gitignore
+.eslintrc
+eslint.config.mjs
+.prettierrc
+
+# IMPORTANT: node_modules is NOT excluded - we need runtime dependencies
+# The copy-deps.js script copies only required dependencies
