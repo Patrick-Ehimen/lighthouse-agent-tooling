@@ -5,6 +5,14 @@
 import { MCPContent } from "@lighthouse-tooling/types";
 
 /**
+ * Base parameters for all MCP tools
+ */
+export interface BaseToolParams {
+  /** Optional per-request API key */
+  apiKey?: string;
+}
+
+/**
  * Base interface for MCP tool executors
  */
 export interface ToolExecutionContext {

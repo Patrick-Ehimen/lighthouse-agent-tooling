@@ -11,6 +11,7 @@ import { ToolResult, ProgressAwareToolResult } from "./types.js";
  * Input parameters for lighthouse_get_dataset tool
  */
 interface GetDatasetParams {
+  apiKey?: string;
   datasetId: string;
 }
 
@@ -38,6 +39,10 @@ export class LighthouseGetDatasetTool {
       inputSchema: {
         type: "object",
         properties: {
+          apiKey: {
+            type: "string",
+            description: "Optional API key for per-request authentication",
+          },
           datasetId: {
             type: "string",
             description: "Unique identifier of the dataset to retrieve",

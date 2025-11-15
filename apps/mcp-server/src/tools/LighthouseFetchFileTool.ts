@@ -13,6 +13,7 @@ import { ProgressAwareToolResult } from "./types.js";
  * Input parameters for lighthouse_fetch_file tool
  */
 interface FetchFileParams {
+  apiKey?: string;
   cid: string;
   outputPath?: string;
   decrypt?: boolean;
@@ -41,6 +42,10 @@ export class LighthouseFetchFileTool {
       inputSchema: {
         type: "object",
         properties: {
+          apiKey: {
+            type: "string",
+            description: "Optional API key for per-request authentication",
+          },
           cid: {
             type: "string",
             description: "IPFS Content Identifier (CID) of the file to download",

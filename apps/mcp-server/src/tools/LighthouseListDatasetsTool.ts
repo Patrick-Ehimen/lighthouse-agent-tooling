@@ -11,6 +11,7 @@ import { ToolResult, ProgressAwareToolResult } from "./types.js";
  * Input parameters for lighthouse_list_datasets tool
  */
 interface ListDatasetsParams {
+  apiKey?: string;
   limit?: number;
   offset?: number;
 }
@@ -38,6 +39,10 @@ export class LighthouseListDatasetsTool {
       inputSchema: {
         type: "object",
         properties: {
+          apiKey: {
+            type: "string",
+            description: "Optional API key for per-request authentication",
+          },
           limit: {
             type: "number",
             description: "Maximum number of datasets to return (default: 10, max: 100)",

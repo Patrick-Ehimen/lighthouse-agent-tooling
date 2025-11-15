@@ -12,6 +12,7 @@ import { ToolResult, ProgressAwareToolResult } from "./types.js";
  * Input parameters for lighthouse_update_dataset tool
  */
 interface UpdateDatasetParams {
+  apiKey?: string;
   datasetId: string;
   addFiles?: string[];
   removeFiles?: string[];
@@ -43,6 +44,10 @@ export class LighthouseUpdateDatasetTool {
       inputSchema: {
         type: "object",
         properties: {
+          apiKey: {
+            type: "string",
+            description: "Optional API key for per-request authentication",
+          },
           datasetId: {
             type: "string",
             description: "Unique identifier of the dataset to update",

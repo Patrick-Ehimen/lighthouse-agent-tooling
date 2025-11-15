@@ -11,6 +11,7 @@ import { ToolResult, ProgressAwareToolResult } from "./types.js";
  * Input parameters for lighthouse_generate_key tool
  */
 interface GenerateKeyParams {
+  apiKey?: string;
   threshold?: number;
   keyCount?: number;
 }
@@ -39,6 +40,10 @@ export class LighthouseGenerateKeyTool {
       inputSchema: {
         type: "object",
         properties: {
+          apiKey: {
+            type: "string",
+            description: "Optional API key for per-request authentication",
+          },
           threshold: {
             type: "number",
             description: "Minimum number of key shards needed for decryption (default: 3)",

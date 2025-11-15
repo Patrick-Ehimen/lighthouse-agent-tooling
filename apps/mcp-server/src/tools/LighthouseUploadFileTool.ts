@@ -17,6 +17,7 @@ import { ToolResult, ProgressAwareToolResult } from "./types.js";
  * Input parameters for lighthouse_upload_file tool
  */
 interface UploadFileParams {
+  apiKey?: string;
   filePath: string;
   encrypt?: boolean;
   accessConditions?: AccessCondition[];
@@ -47,6 +48,10 @@ export class LighthouseUploadFileTool {
       inputSchema: {
         type: "object",
         properties: {
+          apiKey: {
+            type: "string",
+            description: "Optional API key for per-request authentication",
+          },
           filePath: {
             type: "string",
             description: "Path to the file to upload",
