@@ -11,6 +11,7 @@ import { VSCodeProgressStreamer } from "./ui/progress-streamer";
 import { VSCodeWorkspaceProvider } from "./workspace/workspace-provider";
 import { VSCodeStatusBar } from "./ui/status-bar";
 import { VSCodeTreeProvider } from "./ui/tree-provider";
+import { AIAgentHooksImpl, type AIAgentHooks } from "./ai/ai-agent-hooks";
 
 /**
  * Main VSCode extension class
@@ -23,6 +24,7 @@ export class LighthouseVSCodeExtension {
   private workspaceProvider: VSCodeWorkspaceProvider;
   private statusBar: VSCodeStatusBar;
   private treeProvider: VSCodeTreeProvider;
+  private aiHooks: AIAgentHooks;
   private isActivated = false;
 
   constructor(private context: vscode.ExtensionContext) {
@@ -50,6 +52,10 @@ export class LighthouseVSCodeExtension {
     // Note: ExtensionCore's AICommandHandler creates its own LighthouseAISDK instance
     // from process.env, which is separate from this.sdk used by VSCode commands.
     this.extensionCore = createExtensionCore();
+
+    // Initialize AI Agent Hooks
+    // This provides the interface for AI agents to interact with the extension
+    this.aiHooks = new AIAgentHooksImpl(this.extensionCore);
   }
 
   /**
@@ -124,6 +130,11 @@ export class LighthouseVSCodeExtension {
     }
 
     try {
+      // Dispose AI hooks
+      if (this.aiHooks && typeof (this.aiHooks as AIAgentHooksImpl).dispose === "function") {
+        (this.aiHooks as AIAgentHooksImpl).dispose();
+      }
+
       await this.extensionCore.dispose();
       await this.statusBar.dispose();
       await this.treeProvider.dispose();
@@ -131,6 +142,14 @@ export class LighthouseVSCodeExtension {
     } catch (error) {
       console.error("Error during extension deactivation:", error);
     }
+  }
+
+  /**
+   * Get AI Agent Hooks interface
+   * Exposes the hooks interface for AI agents to interact with the extension
+   */
+  getAIAgentHooks(): AIAgentHooks {
+    return this.aiHooks;
   }
 
   /**
