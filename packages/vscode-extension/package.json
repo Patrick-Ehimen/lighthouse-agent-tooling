@@ -158,6 +158,7 @@
     "@lighthouse-tooling/sdk-wrapper": "workspace:*",
     "@lighthouse-tooling/shared": "workspace:*",
     "@lighthouse-tooling/types": "workspace:*",
+    "@lighthouse-tooling/extension-core": "workspace:*",
     "fs-extra": "^11.3.2"
   },
   "devDependencies": {

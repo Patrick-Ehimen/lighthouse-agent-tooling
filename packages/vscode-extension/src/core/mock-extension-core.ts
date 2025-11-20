@@ -1,6 +1,9 @@
 /**
  * Mock Extension Core
- * @fileoverview Temporary mock implementation until extension-core is available
+ * @fileoverview DEPRECATED: This mock implementation has been replaced by the real
+ * ExtensionCore from @lighthouse-tooling/extension-core package.
+ * This file is kept for reference but is no longer used.
+ * @deprecated Use @lighthouse-tooling/extension-core instead
  */
 
 import type { LighthouseAISDK } from "@lighthouse-tooling/sdk-wrapper";
