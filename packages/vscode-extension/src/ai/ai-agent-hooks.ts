@@ -3,6 +3,7 @@
  * @fileoverview Interface for AI agents to interact with the extension
  */
 
+import { randomUUID } from "crypto";
 import type {
   ExtensionCore,
   WorkspaceContext,
@@ -109,6 +110,14 @@ export class AIAgentHooksImpl implements AIAgentHooks {
    * Register a custom AI-accessible function
    */
   registerAIFunction(name: string, handler: AICommandHandlerFunction): void {
+    // Prevent overwriting existing handler
+    if (this.customHandlers.has(name)) {
+      console.warn(
+        `[AI Agent] Handler with name "${name}" already exists. Registration skipped to prevent overwriting.`,
+      );
+      return;
+    }
+
     // Store custom handler
     this.customHandlers.set(name, handler);
 
@@ -173,10 +182,10 @@ export class AIAgentHooksImpl implements AIAgentHooks {
   private async getAIContext(): Promise<AIContext> {
     const now = new Date();
     return {
-      agentId: `agent-${Date.now()}`,
+      agentId: `agent-${randomUUID()}`,
       agentType: AgentType.CUSTOM,
       session: {
-        sessionId: `session-${Date.now()}`,
+        sessionId: `session-${randomUUID()}`,
         startTime: now,
         lastActivity: now,
         duration: 0,
