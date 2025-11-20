@@ -79,11 +79,13 @@ export class KeyValidationCache {
    * Get cache statistics
    */
   getStats(): {
+    enabled: boolean;
     size: number;
     maxSize: number;
     hitRate: number;
   } {
     return {
+      enabled: this.config.enabled,
       size: this.cache.size,
       maxSize: this.config.maxSize,
       hitRate: 0, // Would need to track hits/misses for accurate rate

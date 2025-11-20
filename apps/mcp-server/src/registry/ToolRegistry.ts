@@ -12,6 +12,7 @@ import {
   ToolRegistrationOptions,
   ToolExecutionResult,
 } from "./types.js";
+import { RequestContext } from "../auth/RequestContext.js";
 
 export class ToolRegistry {
   private tools: Map<string, RegisteredTool> = new Map();
@@ -197,6 +198,131 @@ export class ToolRegistry {
         error: (error as Error).message,
         executionTime,
       };
+    }
+  }
+
+  /**
+   * Execute a tool with request context (for authenticated requests)
+   */
+  async executeToolWithContext(
+    name: string,
+    args: Record<string, unknown>,
+    context: RequestContext,
+  ): Promise<ToolExecutionResult> {
+    const startTime = Date.now();
+    const tool = this.tools.get(name);
+
+    if (!tool) {
+      return {
+        success: false,
+        error: `Tool not found: ${name}`,
+        executionTime: Date.now() - startTime,
+      };
+    }
+
+    try {
+      this.logger.debug(`Executing tool with context: ${name}`, {
+        ...context.toLogContext(),
+        argCount: Object.keys(args).length,
+      });
+
+      // For context-aware execution, we need to create tool instances with the context's service
+      // This requires updating the tool registration to support context-aware executors
+      const result = await this.executeToolWithService(name, args, context);
+
+      // Update tool metrics
+      tool.callCount++;
+      tool.lastCalled = new Date();
+      const executionTime = Date.now() - startTime;
+
+      // Update average execution time
+      tool.averageExecutionTime =
+        (tool.averageExecutionTime * (tool.callCount - 1) + executionTime) / tool.callCount;
+
+      this.logger.info(`Tool executed successfully with context: ${name}`, {
+        ...context.toLogContext(),
+        executionTime,
+        callCount: tool.callCount,
+      });
+
+      return {
+        ...result,
+        executionTime,
+      };
+    } catch (error) {
+      const executionTime = Date.now() - startTime;
+      this.logger.error(`Tool execution failed with context: ${name}`, error as Error, {
+        ...context.toLogContext(),
+      });
+
+      return {
+        success: false,
+        error: (error as Error).message,
+        executionTime,
+      };
+    }
+  }
+
+  /**
+   * Execute tool with service from context
+   */
+  private async executeToolWithService(
+    name: string,
+    args: Record<string, unknown>,
+    context: RequestContext,
+  ): Promise<ToolExecutionResult> {
+    // Create tool instance with context's service
+    switch (name) {
+      case "lighthouse_upload_file": {
+        const { LighthouseUploadFileTool } = await import("../tools/LighthouseUploadFileTool.js");
+        const tool = new LighthouseUploadFileTool(context.service, this.logger);
+        return await tool.execute(args);
+      }
+      case "lighthouse_fetch_file": {
+        const { LighthouseFetchFileTool } = await import("../tools/LighthouseFetchFileTool.js");
+        const tool = new LighthouseFetchFileTool(context.service, this.logger);
+        return await tool.execute(args);
+      }
+      case "lighthouse_create_dataset": {
+        const { LighthouseCreateDatasetTool } = await import(
+          "../tools/LighthouseCreateDatasetTool.js"
+        );
+        const tool = new LighthouseCreateDatasetTool(context.service, this.logger);
+        return await tool.execute(args);
+      }
+      case "lighthouse_list_datasets": {
+        const { LighthouseListDatasetsTool } = await import(
+          "../tools/LighthouseListDatasetsTool.js"
+        );
+        const tool = new LighthouseListDatasetsTool(context.service, this.logger);
+        return await tool.execute(args);
+      }
+      case "lighthouse_get_dataset": {
+        const { LighthouseGetDatasetTool } = await import("../tools/LighthouseGetDatasetTool.js");
+        const tool = new LighthouseGetDatasetTool(context.service, this.logger);
+        return await tool.execute(args);
+      }
+      case "lighthouse_update_dataset": {
+        const { LighthouseUpdateDatasetTool } = await import(
+          "../tools/LighthouseUpdateDatasetTool.js"
+        );
+        const tool = new LighthouseUpdateDatasetTool(context.service, this.logger);
+        return await tool.execute(args);
+      }
+      case "lighthouse_generate_key": {
+        const { LighthouseGenerateKeyTool } = await import("../tools/LighthouseGenerateKeyTool.js");
+        const tool = new LighthouseGenerateKeyTool(context.service, this.logger);
+        return await tool.execute(args);
+      }
+      case "lighthouse_setup_access_control": {
+        const { LighthouseSetupAccessControlTool } = await import(
+          "../tools/LighthouseSetupAccessControlTool.js"
+        );
+        const tool = new LighthouseSetupAccessControlTool(context.service, this.logger);
+        return await tool.execute(args);
+      }
+      default:
+        throw new Error(`Unknown tool: ${name}`);
     }
   }
 
