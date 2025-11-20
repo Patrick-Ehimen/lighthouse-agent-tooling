@@ -44,4 +44,10 @@ export type {
   ProgressUpdate,
   AIContext,
   WorkspaceContext,
+  AICommand,
+  AICommandResult,
+  AICommandHandlerFunction,
+  AICommandDefinition,
+  AICommandParameter,
+  AICommandExample,
 } from "./types/index.js";

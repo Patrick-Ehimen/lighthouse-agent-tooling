@@ -125,4 +125,29 @@ describe("LighthouseVSCodeExtension", () => {
       expect(getLanguageFromExtension("test")).toBe("plaintext");
     });
   });
+
+  describe("AI Agent Hooks", () => {
+    beforeEach(async () => {
+      await extension.activate();
+    });
+
+    it("should expose AI agent hooks", () => {
+      const aiHooks = extension.getAIAgentHooks();
+
+      expect(aiHooks).toBeDefined();
+      expect(typeof aiHooks.onAICommand).toBe("function");
+      expect(typeof aiHooks.getWorkspaceContext).toBe("function");
+      expect(typeof aiHooks.registerAIFunction).toBe("function");
+      expect(typeof aiHooks.onProgress).toBe("function");
+    });
+
+    it("should get workspace context via hooks", async () => {
+      const aiHooks = extension.getAIAgentHooks();
+      const context = await aiHooks.getWorkspaceContext();
+
+      expect(context).toBeDefined();
+      expect(context).toHaveProperty("projectPath");
+      expect(context).toHaveProperty("files");
+    });
+  });
 });
