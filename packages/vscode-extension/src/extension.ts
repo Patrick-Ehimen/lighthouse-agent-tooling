@@ -4,7 +4,7 @@
  */
 
 import * as vscode from "vscode";
-import { ExtensionCore } from "./core/mock-extension-core";
+import { createExtensionCore, type ExtensionCore } from "@lighthouse-tooling/extension-core";
 import { LighthouseAISDK } from "@lighthouse-tooling/sdk-wrapper";
 import { VSCodeCommandRegistry } from "./commands/command-registry";
 import { VSCodeProgressStreamer } from "./ui/progress-streamer";
@@ -41,13 +41,15 @@ export class LighthouseVSCodeExtension {
     this.statusBar = new VSCodeStatusBar();
     this.treeProvider = new VSCodeTreeProvider(this.sdk);
 
-    // Initialize extension core with VSCode-specific implementations
-    this.extensionCore = new ExtensionCore({
-      commandRegistry: this.commandRegistry,
-      progressStreamer: this.progressStreamer,
-      workspaceContextProvider: this.workspaceProvider,
-      sdk: this.sdk,
-    });
+    // Initialize real extension core
+    // The ExtensionCoreImpl creates its own internal components (CommandRegistry,
+    // ProgressStreamer, WorkspaceContextProvider, AICommandHandler, etc.)
+    // We keep VSCode-specific components (VSCodeCommandRegistry, VSCodeProgressStreamer,
+    // VSCodeWorkspaceProvider) for UI integration while leveraging the real ExtensionCore
+    // for AI command handling and core functionality.
+    // Note: ExtensionCore's AICommandHandler creates its own LighthouseAISDK instance
+    // from process.env, which is separate from this.sdk used by VSCode commands.
+    this.extensionCore = createExtensionCore();
   }
 
   /**
@@ -80,8 +82,19 @@ export class LighthouseVSCodeExtension {
         // Continue activation but warn user
       }
 
-      // Initialize core components
+      // Initialize SDK first (for VSCode extension commands)
+      await this.sdk.initialize();
+
+      // Set environment variable for ExtensionCore's AI command handler if API key is available
+      if (apiKey && apiKey.trim() !== "") {
+        process.env.LIGHTHOUSE_API_KEY = apiKey;
+      }
+
+      // Initialize extension core (creates its own internal components including AICommandHandler)
+      // This will initialize the AI command handler, workspace context provider, and other core features
       await this.extensionCore.initialize();
+
+      // Initialize VSCode-specific UI components
       await this.statusBar.initialize();
       await this.treeProvider.initialize();
 
