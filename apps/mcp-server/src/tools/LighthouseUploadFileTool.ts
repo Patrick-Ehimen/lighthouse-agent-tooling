@@ -177,6 +177,7 @@ export class LighthouseUploadFileTool {
 
       // Cast and validate parameters
       const params: UploadFileParams = {
+        apiKey: args.apiKey as string | undefined,
         filePath: args.filePath as string,
         encrypt: args.encrypt as boolean | undefined,
         accessConditions: args.accessConditions as AccessCondition[] | undefined,

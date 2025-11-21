@@ -10,7 +10,6 @@ import {
   ListResourcesRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { Logger } from "@lighthouse-tooling/shared";
-import { LIGHTHOUSE_MCP_TOOLS } from "@lighthouse-tooling/types";
 
 import { ToolRegistry } from "./registry/ToolRegistry.js";
 import { LighthouseService } from "./services/LighthouseService.js";
@@ -26,13 +25,11 @@ import {
   LighthouseGenerateKeyTool,
   LighthouseSetupAccessControlTool,
 } from "./tools/index.js";
-import {
-  ListToolsHandler,
-  CallToolHandler,
-  ListResourcesHandler,
-  InitializeHandler,
-} from "./handlers/index.js";
 import { ServerConfig, DEFAULT_SERVER_CONFIG } from "./config/server-config.js";
+import { AuthManager } from "./auth/AuthManager.js";
+import { LighthouseServiceFactory } from "./auth/LighthouseServiceFactory.js";
+import { RequestContext } from "./auth/RequestContext.js";
+import { AuthenticationError } from "./errors/AuthenticationError.js";
 
 export class LighthouseMCPServer {
   private server: Server;
@@ -42,11 +39,9 @@ export class LighthouseMCPServer {
   private logger: Logger;
   private config: ServerConfig;
 
-  // Handlers
-  private listToolsHandler: ListToolsHandler;
-  private callToolHandler: CallToolHandler;
-  private listResourcesHandler: ListResourcesHandler;
-  private initializeHandler: InitializeHandler;
+  // Authentication components
+  private authManager: AuthManager;
+  private serviceFactory: LighthouseServiceFactory;
 
   constructor(
     config: Partial<ServerConfig> = {},
@@ -77,14 +72,36 @@ export class LighthouseMCPServer {
       },
     );
 
+    // Initialize authentication components
+    if (!this.config.authentication) {
+      throw new Error("Authentication configuration is required");
+    }
+    this.authManager = new AuthManager(this.config.authentication);
+    this.serviceFactory = new LighthouseServiceFactory(
+      this.config.performance || {
+        servicePoolSize: 50,
+        serviceTimeoutMinutes: 30,
+        concurrentRequestLimit: 100,
+      },
+    );
+
     // Initialize services
     if (services?.lighthouseService) {
       this.lighthouseService = services.lighthouseService;
     } else {
-      if (!this.config.lighthouseApiKey) {
-        throw new Error("LIGHTHOUSE_API_KEY environment variable is required");
+      // For backward compatibility, still support direct API key configuration
+      if (!this.config.lighthouseApiKey && !this.config.authentication?.defaultApiKey) {
+        throw new Error(
+          "LIGHTHOUSE_API_KEY environment variable or authentication.defaultApiKey is required",
+        );
       }
-      this.lighthouseService = new LighthouseService(this.config.lighthouseApiKey, this.logger);
+      const apiKey = this.config.lighthouseApiKey || this.config.authentication?.defaultApiKey;
+      if (apiKey) {
+        this.lighthouseService = new LighthouseService(apiKey, this.logger);
+      } else {
+        // Create a placeholder service - actual services will be created per-request
+        this.lighthouseService = new LighthouseService("placeholder", this.logger);
+      }
     }
 
     if (services?.datasetService) {
@@ -96,26 +113,144 @@ export class LighthouseMCPServer {
     // Initialize registry
     this.registry = new ToolRegistry(this.logger);
 
-    // Initialize handlers
-    this.listToolsHandler = new ListToolsHandler(this.registry, this.logger);
-    this.callToolHandler = new CallToolHandler(this.registry, this.logger);
-    this.listResourcesHandler = new ListResourcesHandler(
-      this.lighthouseService,
-      this.datasetService,
-      this.logger,
-    );
-    this.initializeHandler = new InitializeHandler(
-      {
-        name: this.config.name,
-        version: this.config.version,
-      },
-      this.logger,
-    );
-
     this.logger.info("Lighthouse MCP Server created", {
       name: this.config.name,
       version: this.config.version,
     });
+  }
+
+  /**
+   * Handle CallTool requests with authentication
+   */
+  private async handleCallTool(request: {
+    params: { name: string; arguments: Record<string, unknown> };
+  }): Promise<{
+    content: Array<{
+      type: "text";
+      text: string;
+    }>;
+  }> {
+    const { name, arguments: args } = request.params;
+    const startTime = Date.now();
+
+    try {
+      this.logger.debug("Processing tool call", {
+        tool: name,
+        hasApiKey: !!args?.apiKey,
+        argCount: Object.keys(args || {}).length,
+      });
+
+      // Extract API key from request parameters
+      const requestApiKey = args?.apiKey as string | undefined;
+
+      // Authenticate the request
+      const authResult = await this.authManager.authenticate(requestApiKey);
+
+      if (!authResult.success) {
+        this.logger.warn("Authentication failed", {
+          tool: name,
+          keyHash: authResult.keyHash,
+          usedFallback: authResult.usedFallback,
+          rateLimited: authResult.rateLimited,
+          authTime: authResult.authTime,
+        });
+
+        // Throw appropriate authentication error
+        if (authResult.rateLimited) {
+          throw AuthenticationError.rateLimited(authResult.keyHash, 60);
+        } else if (authResult.errorMessage?.includes("required")) {
+          throw AuthenticationError.missingApiKey();
+        } else {
+          throw AuthenticationError.invalidApiKey(authResult.keyHash);
+        }
+      }
+
+      // Get effective API key for service creation
+      const effectiveApiKey = await this.authManager.getEffectiveApiKey(requestApiKey);
+
+      // Get service instance for this API key
+      const service = await this.serviceFactory.getService(effectiveApiKey);
+
+      // Create request context
+      const context = new RequestContext({
+        apiKey: effectiveApiKey,
+        keyHash: authResult.keyHash,
+        service,
+        toolName: name,
+      });
+
+      this.logger.info("Authentication successful", {
+        ...context.toLogContext(),
+        usedFallback: authResult.usedFallback,
+        authTime: authResult.authTime,
+      });
+
+      // Route to appropriate tool handler with context
+      const result = await this.routeToolCall(name, args, context);
+
+      const totalTime = Date.now() - startTime;
+      this.logger.info("Tool call completed", {
+        ...context.toLogContext(),
+        totalTime,
+      });
+
+      return result;
+    } catch (error) {
+      const totalTime = Date.now() - startTime;
+
+      // Log error without exposing API key
+      const sanitizedKey = args?.apiKey
+        ? this.authManager.sanitizeApiKey(args.apiKey as string)
+        : "none";
+      this.logger.error("Tool call failed", error as Error, {
+        tool: name,
+        sanitizedApiKey: sanitizedKey,
+        totalTime,
+      });
+
+      // Re-throw authentication errors as-is
+      if (error instanceof AuthenticationError) {
+        throw error;
+      }
+
+      // Wrap other errors
+      throw new Error(
+        `Tool execution failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    }
+  }
+
+  /**
+   * Route tool call to appropriate handler with request context
+   */
+  private async routeToolCall(
+    toolName: string,
+    params: Record<string, unknown>,
+    context: RequestContext,
+  ): Promise<{
+    content: Array<{
+      type: "text";
+      text: string;
+    }>;
+  }> {
+    // Remove apiKey from params before passing to tool
+    const { apiKey: _apiKey, ...toolParams } = params;
+
+    // Execute tool with context-aware service
+    const result = await this.registry.executeToolWithContext(toolName, toolParams, context);
+
+    if (!result.success) {
+      throw new Error(result.error || "Tool execution failed");
+    }
+
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: JSON.stringify(result.data, null, 2),
+        },
+      ],
+    };
   }
 
   /**
@@ -211,23 +346,14 @@ export class LighthouseMCPServer {
       return { tools };
     });
 
-    // Handle CallTool
-    this.server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
-      const { name, arguments: args } = request.params;
-      const result = await this.registry.executeTool(name, (args as Record<string, unknown>) || {});
-
-      if (!result.success) {
-        throw new Error(result.error || "Tool execution failed");
-      }
-
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: JSON.stringify(result.data, null, 2),
-          },
-        ],
-      };
+    // Handle CallTool with authentication
+    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+      return await this.handleCallTool({
+        params: {
+          name: request.params.name,
+          arguments: request.params.arguments || {},
+        },
+      });
     });
 
     // Handle ListResources
@@ -333,6 +459,17 @@ export class LighthouseMCPServer {
   async stop(): Promise<void> {
     try {
       this.logger.info("Stopping server...");
+
+      // Cleanup authentication resources
+      if (this.authManager) {
+        this.authManager.destroy();
+      }
+
+      // Cleanup service factory
+      if (this.serviceFactory) {
+        this.serviceFactory.destroy();
+      }
+
       await this.server.close();
       this.logger.info("Server stopped successfully");
     } catch (error) {
@@ -375,5 +512,40 @@ export class LighthouseMCPServer {
    */
   getDatasetService(): MockDatasetService {
     return this.datasetService;
+  }
+
+  /**
+   * Get authentication manager instance (for testing)
+   */
+  getAuthManager(): AuthManager {
+    return this.authManager;
+  }
+
+  /**
+   * Get service factory instance (for testing)
+   */
+  getServiceFactory(): LighthouseServiceFactory {
+    return this.serviceFactory;
+  }
+
+  /**
+   * Get authentication statistics
+   */
+  getAuthStats(): {
+    cache: any;
+    servicePool: unknown;
+  } {
+    return {
+      cache: this.authManager.getCacheStats(),
+      servicePool: this.serviceFactory.getStats(),
+    };
+  }
+
+  /**
+   * Invalidate cached API key validation
+   */
+  invalidateApiKey(apiKey: string): void {
+    this.authManager.invalidateKey(apiKey);
+    this.serviceFactory.removeService(apiKey);
   }
 }
