@@ -159,6 +159,7 @@
     "@lighthouse-tooling/shared": "workspace:*",
     "@lighthouse-tooling/types": "workspace:*",
     "@lighthouse-tooling/extension-core": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.0.4",
     "fs-extra": "^11.3.2"
   },
   "devDependencies": {

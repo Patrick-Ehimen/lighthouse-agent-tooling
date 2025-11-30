@@ -47,10 +47,9 @@
     "configuration": {
       "title": "Lighthouse",
       "properties": {
-        "lighthouse.cursor.mcpServerUrl": {
+        "lighthouse.cursor.apiKey": {
           "type": "string",
-          "default": "http://localhost:3000",
-          "description": "MCP Server URL for AI agent communication"
+          "description": "Lighthouse API key for authentication"
         },
         "lighthouse.cursor.autoStartMCP": {
           "type": "boolean",
@@ -73,7 +72,9 @@
   "dependencies": {
     "@lighthouse-tooling/shared": "workspace:*",
     "@lighthouse-tooling/sdk-wrapper": "workspace:*",
-    "@lighthouse-tooling/types": "workspace:*"
+    "@lighthouse-tooling/types": "workspace:*",
+    "@lighthouse-tooling/extension-core": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.0.4"
   },
   "devDependencies": {
     "@types/vscode": "^1.74.0",
