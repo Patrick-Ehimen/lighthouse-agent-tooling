@@ -14,6 +14,7 @@ import type {
   AIContext,
 } from "@lighthouse-tooling/extension-core";
 import { AgentType, KeyStorageMethod, EncryptionStrength } from "@lighthouse-tooling/types";
+import type { MCPClient } from "../mcp/mcp-client";
 
 /**
  * AI Agent Hooks interface
@@ -57,9 +58,21 @@ export class AIAgentHooksImpl implements AIAgentHooks {
   private progressCallbacks: Set<(progress: ProgressUpdate) => void> = new Set();
   private customHandlers: Map<string, AICommandHandlerFunction> = new Map();
   private progressCheckInterval: NodeJS.Timeout | null = null;
+  private mcpClient: MCPClient | null = null;
 
-  constructor(private extensionCore: ExtensionCore) {
+  constructor(
+    private extensionCore: ExtensionCore,
+    mcpClient?: MCPClient | null,
+  ) {
+    this.mcpClient = mcpClient || null;
     this.setupProgressListener();
+  }
+
+  /**
+   * Set MCP client for tool calling
+   */
+  setMCPClient(client: MCPClient | null): void {
+    this.mcpClient = client;
   }
 
   /**
@@ -79,6 +92,23 @@ export class AIAgentHooksImpl implements AIAgentHooks {
       return result.data || result;
     }
 
+    // Try MCP client first if available and command matches MCP tool pattern
+    if (this.mcpClient && this.mcpClient.isClientConnected()) {
+      const mcpToolName = this.mapCommandToMCPTool(command);
+      if (mcpToolName) {
+        try {
+          const result = await this.mcpClient.callTool(mcpToolName, params);
+          if (result.success) {
+            return result.data;
+          }
+          // Fall through to ExtensionCore if MCP call fails
+        } catch (error) {
+          // Fall through to ExtensionCore if MCP call fails
+          console.warn("MCP tool call failed, falling back to ExtensionCore:", error);
+        }
+      }
+    }
+
     // Use ExtensionCore's AI command handler
     const aiCommandHandler = this.extensionCore.getAICommandHandler();
 
@@ -96,6 +126,34 @@ export class AIAgentHooksImpl implements AIAgentHooks {
     }
 
     return result.data;
+  }
+
+  /**
+   * Map AI command to MCP tool name
+   */
+  private mapCommandToMCPTool(command: string): string | null {
+    const commandMap: Record<string, string> = {
+      upload_file: "lighthouse_upload_file",
+      uploadFile: "lighthouse_upload_file",
+      fetch_file: "lighthouse_fetch_file",
+      fetchFile: "lighthouse_fetch_file",
+      download_file: "lighthouse_fetch_file",
+      downloadFile: "lighthouse_fetch_file",
+      create_dataset: "lighthouse_create_dataset",
+      createDataset: "lighthouse_create_dataset",
+      list_datasets: "lighthouse_list_datasets",
+      listDatasets: "lighthouse_list_datasets",
+      get_dataset: "lighthouse_get_dataset",
+      getDataset: "lighthouse_get_dataset",
+      update_dataset: "lighthouse_update_dataset",
+      updateDataset: "lighthouse_update_dataset",
+      generate_key: "lighthouse_generate_key",
+      generateKey: "lighthouse_generate_key",
+      setup_access_control: "lighthouse_setup_access_control",
+      setupAccessControl: "lighthouse_setup_access_control",
+    };
+
+    return commandMap[command] || null;
   }
 
   /**

@@ -12,6 +12,7 @@ import { VSCodeWorkspaceProvider } from "./workspace/workspace-provider";
 import { VSCodeStatusBar } from "./ui/status-bar";
 import { VSCodeTreeProvider } from "./ui/tree-provider";
 import { AIAgentHooksImpl, type AIAgentHooks } from "./ai/ai-agent-hooks";
+import { MCPClient } from "./mcp/mcp-client";
 
 /**
  * Main VSCode extension class
@@ -25,6 +26,7 @@ export class LighthouseVSCodeExtension {
   private statusBar: VSCodeStatusBar;
   private treeProvider: VSCodeTreeProvider;
   private aiHooks: AIAgentHooks;
+  private mcpClient: MCPClient | null = null;
   private isActivated = false;
 
   constructor(private context: vscode.ExtensionContext) {
@@ -55,7 +57,7 @@ export class LighthouseVSCodeExtension {
 
     // Initialize AI Agent Hooks
     // This provides the interface for AI agents to interact with the extension
-    this.aiHooks = new AIAgentHooksImpl(this.extensionCore);
+    this.aiHooks = new AIAgentHooksImpl(this.extensionCore, null);
   }
 
   /**
@@ -113,6 +115,15 @@ export class LighthouseVSCodeExtension {
       // Setup configuration watching
       this.setupConfigurationWatching();
 
+      // Initialize MCP client if API key is available
+      if (apiKey && apiKey.trim() !== "") {
+        await this.initializeMCPClient(apiKey);
+        // Update AI hooks with MCP client
+        if (this.mcpClient && this.aiHooks instanceof AIAgentHooksImpl) {
+          this.aiHooks.setMCPClient(this.mcpClient);
+        }
+      }
+
       this.isActivated = true;
     } catch (error) {
       throw new Error(
@@ -133,6 +144,12 @@ export class LighthouseVSCodeExtension {
       // Dispose AI hooks
       if (this.aiHooks && typeof (this.aiHooks as AIAgentHooksImpl).dispose === "function") {
         (this.aiHooks as AIAgentHooksImpl).dispose();
+      }
+
+      // Disconnect MCP client
+      if (this.mcpClient) {
+        await this.mcpClient.disconnect();
+        this.mcpClient = null;
       }
 
       await this.extensionCore.dispose();
@@ -410,56 +427,93 @@ Try again with a smaller file or check your network connection.`;
   }
 
   /**
+   * Initialize MCP client
+   */
+  private async initializeMCPClient(apiKey: string): Promise<void> {
+    try {
+      const config = vscode.workspace.getConfiguration("lighthouse.vscode");
+      const autoConnect = config.get<boolean>("autoConnectMCP") ?? true;
+
+      if (!autoConnect) {
+        return;
+      }
+
+      this.mcpClient = new MCPClient({
+        apiKey,
+        autoConnect: true,
+      });
+
+      await this.mcpClient.connect();
+      this.statusBar.showSuccess("MCP Server connected");
+    } catch (error) {
+      // Don't show error to user, just log it
+      // MCP connection is optional for basic functionality
+      console.error("Failed to initialize MCP client:", error);
+    }
+  }
+
+  /**
    * Handle connect MCP command
    */
   private async handleConnectMCP(): Promise<void> {
     try {
       const config = vscode.workspace.getConfiguration("lighthouse.vscode");
-      const currentUrl = config.get<string>("mcpServerUrl") || "http://localhost:3000";
+      const apiKey = config.get<string>("apiKey");
 
-      const url = await vscode.window.showInputBox({
-        prompt: "Enter MCP Server URL",
-        value: currentUrl,
-        placeHolder: "http://localhost:3000",
-        validateInput: (value) => {
-          if (!value || value.trim().length === 0) {
-            return "MCP Server URL is required";
-          }
-          try {
-            new URL(value);
-            return null;
-          } catch {
-            return "Please enter a valid URL";
-          }
-        },
-      });
+      if (!apiKey || apiKey.trim() === "") {
+        const selection = await vscode.window.showErrorMessage(
+          "Lighthouse API key is required to connect to MCP Server. Please configure your API key first.",
+          "Set API Key",
+          "Cancel",
+        );
 
-      if (!url) {
+        if (selection === "Set API Key") {
+          await vscode.commands.executeCommand(
+            "workbench.action.openSettings",
+            "lighthouse.vscode.apiKey",
+          );
+        }
         return;
       }
 
-      // Update configuration
-      await config.update("mcpServerUrl", url.trim(), vscode.ConfigurationTarget.Workspace);
-
-      // Test connection
       const operationId = `mcp-connect-${Date.now()}`;
       const progress = this.progressStreamer.startProgress(operationId, "Connecting to MCP Server");
 
       try {
-        // Test the connection by making a simple request
-        const response = await fetch(`${url.trim()}/health`);
-        if (!response.ok) {
-          throw new Error(`Server responded with status: ${response.status}`);
+        // Disconnect existing client if any
+        if (this.mcpClient) {
+          await this.mcpClient.disconnect();
+        }
+
+        // Create and connect new client
+        this.mcpClient = new MCPClient({
+          apiKey,
+          autoConnect: true,
+        });
+
+        await this.mcpClient.connect();
+
+        // List available tools
+        const tools = this.mcpClient.getAvailableTools();
+
+        // Update AI hooks with MCP client
+        if (this.aiHooks instanceof AIAgentHooksImpl) {
+          this.aiHooks.setMCPClient(this.mcpClient);
         }
 
         progress.complete();
         this.statusBar.showSuccess("MCP Server connected");
 
         vscode.window
-          .showInformationMessage("Successfully connected to MCP Server!", "Test Tools")
+          .showInformationMessage(
+            `Successfully connected to MCP Server! ${tools.length} tools available.`,
+            "View Tools",
+          )
           .then((selection) => {
-            if (selection === "Test Tools") {
-              vscode.commands.executeCommand("workbench.action.terminal.new");
+            if (selection === "View Tools") {
+              // Show tools in output channel or notification
+              const toolNames = tools.map((t) => t.name).join(", ");
+              vscode.window.showInformationMessage(`Available tools: ${toolNames}`);
             }
           });
       } catch (error) {
@@ -472,6 +526,13 @@ Try again with a smaller file or check your network connection.`;
         `Failed to connect to MCP Server: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
+  }
+
+  /**
+   * Get MCP client instance
+   */
+  getMCPClient(): MCPClient | null {
+    return this.mcpClient;
   }
 
   /**
@@ -736,6 +797,19 @@ Try again with a smaller file or check your network connection.`;
           timeout: 180000, // Increased to 3 minutes for better reliability
         });
         await this.sdk.initialize();
+
+        // Update MCP client API key if connected
+        if (this.mcpClient) {
+          this.mcpClient.updateApiKey(apiKey);
+          // Reconnect to apply new API key
+          await this.mcpClient.disconnect();
+          await this.initializeMCPClient(apiKey);
+          // Update AI hooks with new MCP client
+          if (this.mcpClient && this.aiHooks instanceof AIAgentHooksImpl) {
+            this.aiHooks.setMCPClient(this.mcpClient);
+          }
+        }
+
         this.statusBar.showSuccess("Configuration updated");
       }
     } catch (error) {
