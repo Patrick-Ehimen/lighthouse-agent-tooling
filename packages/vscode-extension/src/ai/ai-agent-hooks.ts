@@ -12,6 +12,7 @@ import type {
   AICommandResult,
   AICommandHandlerFunction,
   AIContext,
+  ProgressStream,
 } from "@lighthouse-tooling/extension-core";
 import { AgentType, KeyStorageMethod, EncryptionStrength } from "@lighthouse-tooling/types";
 import type { MCPClient } from "../mcp/mcp-client";
@@ -216,7 +217,7 @@ export class AIAgentHooksImpl implements AIAgentHooks {
         const progressStreamer = this.extensionCore.getProgressStreamer();
         const activeStreams = progressStreamer.getActiveStreams();
 
-        activeStreams.forEach((stream) => {
+        activeStreams.forEach((stream: ProgressStream) => {
           const progress = stream.getCurrentProgress();
           if (progress) {
             this.progressCallbacks.forEach((callback) => {
