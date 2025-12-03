@@ -6,15 +6,21 @@ import { LighthouseAISDK, EnhancedAccessCondition } from "@lighthouse-tooling/sd
 import { UploadResult, DownloadResult, AccessCondition, Dataset } from "@lighthouse-tooling/types";
 import { Logger } from "@lighthouse-tooling/shared";
 import { ILighthouseService, StoredFile } from "./ILighthouseService.js";
+import { DatabaseService } from "../storage/DatabaseService.js";
 
 export class LighthouseService implements ILighthouseService {
   private sdk: LighthouseAISDK;
   private logger: Logger;
+  private database: DatabaseService;
+  // Keep in-memory cache for performance (LRU cache can be added later)
   private fileCache: Map<string, StoredFile> = new Map();
   private datasetCache: Map<string, Dataset> = new Map();
 
-  constructor(apiKey: string, logger?: Logger) {
+  constructor(apiKey: string, logger?: Logger, dbPath?: string) {
     this.logger = logger || Logger.getInstance({ level: "info", component: "LighthouseService" });
+
+    // Initialize database service
+    this.database = new DatabaseService({ dbPath });
 
     this.sdk = new LighthouseAISDK({
       apiKey,
@@ -119,7 +125,7 @@ export class LighthouseService implements ILighthouseService {
         },
       });
 
-      // Store file metadata in cache
+      // Store file metadata in cache and database
       const storedFile: StoredFile = {
         cid: fileInfo.hash,
         filePath: params.filePath,
@@ -132,6 +138,9 @@ export class LighthouseService implements ILighthouseService {
         hash: fileInfo.hash,
       };
 
+      // Persist to database
+      this.database.saveFile(storedFile);
+      // Update cache
       this.fileCache.set(fileInfo.hash, storedFile);
 
       const result: UploadResult = {
@@ -214,7 +223,8 @@ export class LighthouseService implements ILighthouseService {
       // Get file info to verify it exists
       await this.sdk.getFileInfo(cid);
 
-      // Update cache if exists
+      // Update database and cache
+      this.database.updateFilePinned(cid, true);
       const cachedFile = this.fileCache.get(cid);
       if (cachedFile) {
         cachedFile.pinned = true;
@@ -240,7 +250,8 @@ export class LighthouseService implements ILighthouseService {
     try {
       this.logger.info("Unpinning file", { cid });
 
-      // Update cache if exists
+      // Update database and cache
+      this.database.updateFilePinned(cid, false);
       const cachedFile = this.fileCache.get(cid);
       if (cachedFile) {
         cachedFile.pinned = false;
@@ -270,6 +281,13 @@ export class LighthouseService implements ILighthouseService {
         return cachedFile;
       }
 
+      // Try database
+      const dbFile = this.database.getFile(cid);
+      if (dbFile) {
+        this.fileCache.set(cid, dbFile);
+        return dbFile;
+      }
+
       // Get from Lighthouse
       const fileInfo = await this.sdk.getFileInfo(cid);
 
@@ -283,7 +301,8 @@ export class LighthouseService implements ILighthouseService {
         hash: fileInfo.hash,
       };
 
-      // Cache it
+      // Persist to database and cache
+      this.database.saveFile(storedFile);
       this.fileCache.set(cid, storedFile);
 
       return storedFile;
@@ -298,6 +317,17 @@ export class LighthouseService implements ILighthouseService {
    */
   async listFiles(): Promise<StoredFile[]> {
     try {
+      // Try to get from database first (faster)
+      const dbFiles = this.database.listFiles();
+      if (dbFiles.length > 0) {
+        // Update cache
+        dbFiles.forEach((file) => {
+          this.fileCache.set(file.cid, file);
+        });
+        return dbFiles;
+      }
+
+      // Fallback to SDK if database is empty
       const response = await this.sdk.listFiles(100, 0); // Get up to 100 files
 
       const files: StoredFile[] = response.files.map((fileInfo) => {
@@ -311,7 +341,8 @@ export class LighthouseService implements ILighthouseService {
           hash: fileInfo.hash,
         };
 
-        // Update cache
+        // Persist to database and update cache
+        this.database.saveFile(storedFile);
         this.fileCache.set(fileInfo.hash, storedFile);
 
         return storedFile;
@@ -333,11 +364,12 @@ export class LighthouseService implements ILighthouseService {
     maxSize: number;
     utilization: number;
   } {
-    const files = Array.from(this.fileCache.values());
-    const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+    // Get stats from database (more accurate)
+    const fileCount = this.database.getFileCount();
+    const totalSize = this.database.getTotalSize();
 
     return {
-      fileCount: files.length,
+      fileCount,
       totalSize,
       maxSize: Number.MAX_SAFE_INTEGER, // Lighthouse doesn't have a fixed limit
       utilization: 0, // Can't calculate without knowing the limit
@@ -491,7 +523,9 @@ export class LighthouseService implements ILighthouseService {
    */
   clear(): void {
     this.fileCache.clear();
-    this.logger.info("File cache cleared");
+    this.datasetCache.clear();
+    this.database.clear();
+    this.logger.info("Cache and database cleared");
   }
 
   /**
@@ -550,7 +584,8 @@ export class LighthouseService implements ILighthouseService {
         accessConditions: params.accessConditions,
       };
 
-      // Cache the dataset
+      // Persist to database and cache
+      this.database.saveDataset(dataset);
       this.datasetCache.set(dataset.id, dataset);
 
       this.logger.info("Dataset created successfully", {
@@ -616,7 +651,8 @@ export class LighthouseService implements ILighthouseService {
         encrypted: datasetInfo.encrypted,
       };
 
-      // Update cache
+      // Persist to database and update cache
+      this.database.saveDataset(dataset);
       this.datasetCache.set(dataset.id, dataset);
 
       this.logger.info("Dataset updated successfully", {
@@ -641,6 +677,13 @@ export class LighthouseService implements ILighthouseService {
       const cachedDataset = this.datasetCache.get(datasetId);
       if (cachedDataset) {
         return cachedDataset;
+      }
+
+      // Try database
+      const dbDataset = this.database.getDataset(datasetId);
+      if (dbDataset) {
+        this.datasetCache.set(datasetId, dbDataset);
+        return dbDataset;
       }
 
       // Use SDK wrapper to get dataset
@@ -672,7 +715,8 @@ export class LighthouseService implements ILighthouseService {
         encrypted: datasetInfo.encrypted,
       };
 
-      // Cache it
+      // Persist to database and cache
+      this.database.saveDataset(dataset);
       this.datasetCache.set(dataset.id, dataset);
 
       return dataset;
@@ -694,7 +738,21 @@ export class LighthouseService implements ILighthouseService {
       const limit = params?.limit || 10;
       const offset = params?.offset || 0;
 
-      // Use SDK wrapper to list datasets
+      // Try to get from database first (faster and more accurate)
+      const dbResult = this.database.listDatasets(limit, offset);
+      if (dbResult.total > 0) {
+        // Update cache
+        dbResult.datasets.forEach((dataset) => {
+          this.datasetCache.set(dataset.id, dataset);
+        });
+        return {
+          datasets: dbResult.datasets,
+          total: dbResult.total,
+          hasMore: offset + limit < dbResult.total,
+        };
+      }
+
+      // Fallback to SDK if database is empty
       const response = await this.sdk.listDatasets(limit, offset);
 
       const datasets: Dataset[] = response.datasets.map((datasetInfo) => {
@@ -723,7 +781,8 @@ export class LighthouseService implements ILighthouseService {
           encrypted: datasetInfo.encrypted,
         };
 
-        // Cache it
+        // Persist to database and cache
+        this.database.saveDataset(dataset);
         this.datasetCache.set(dataset.id, dataset);
 
         return dataset;
@@ -754,7 +813,8 @@ export class LighthouseService implements ILighthouseService {
       // Use SDK wrapper to delete dataset
       await this.sdk.deleteDataset(datasetId, deleteFiles);
 
-      // Remove from cache
+      // Remove from database and cache
+      this.database.deleteDataset(datasetId, deleteFiles);
       this.datasetCache.delete(datasetId);
 
       this.logger.info("Dataset deleted successfully", { datasetId });
@@ -771,6 +831,7 @@ export class LighthouseService implements ILighthouseService {
     this.sdk.destroy();
     this.fileCache.clear();
     this.datasetCache.clear();
+    this.database.close();
     this.logger.info("Lighthouse service destroyed");
   }
 }
