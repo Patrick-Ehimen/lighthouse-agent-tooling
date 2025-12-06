@@ -23,6 +23,9 @@ export * from "./errors.js";
 // Workspace context and project file types
 export * from "./workspace.js";
 
+// Multi-tenancy types
+export * from "./multi-tenancy.js";
+
 // Re-export commonly used types for convenience
 export type {
   // Core types
@@ -68,6 +71,20 @@ export type {
   AIContext,
 } from "./workspace.js";
 
+export type {
+  // Multi-tenancy types
+  Organization,
+  Team,
+  TeamMember,
+  TenantApiKey,
+  TenantContext,
+  UsageQuota,
+  OrganizationSettings,
+  TenantResolutionResult,
+  TenantAuditLog,
+  MultiTenancyConfig,
+} from "./multi-tenancy.js";
+
 // Re-export enums for convenience
 export {
   // Core enums
@@ -112,6 +129,14 @@ export {
   HistoryEntryType,
   CacheStorageType,
 } from "./workspace.js";
+
+export {
+  // Multi-tenancy enums
+  Role,
+  Permission,
+  TenantErrorCode,
+  ROLE_PERMISSIONS,
+} from "./multi-tenancy.js";
 
 // Export default retry configurations
 export { DEFAULT_RETRY_CONFIGS } from "./errors.js";
