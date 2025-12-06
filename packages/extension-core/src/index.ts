@@ -36,6 +36,7 @@ export type {
   ExtensionCore,
   CommandRegistry,
   ProgressStreamer,
+  ProgressStream,
   WorkspaceContextProvider,
   AICommandHandler,
   ExtensionConfiguration,

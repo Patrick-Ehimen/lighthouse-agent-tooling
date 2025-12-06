@@ -191,11 +191,16 @@ export class MCPClient {
       });
 
       // Parse result content
-      const content = result.content || [];
+      const content = (result.content || []) as Array<{ type: string; text: string }>;
       let data: unknown;
 
       // Try to parse JSON from text content
-      if (content.length > 0 && content[0].type === "text") {
+      if (
+        Array.isArray(content) &&
+        content.length > 0 &&
+        content[0] &&
+        content[0].type === "text"
+      ) {
         try {
           data = JSON.parse(content[0].text);
         } catch {
@@ -235,7 +240,7 @@ export class MCPClient {
 
     try {
       const result = await this.client.listResources();
-      return result;
+      return result as MCPResult;
     } catch (error) {
       this.logger.error("Failed to list resources", error as Error);
       throw error;

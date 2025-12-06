@@ -11,6 +11,9 @@ export * from "./constants";
 // Export all utilities
 export * from "./utils";
 
+// Export offline mode support
+export * from "./offline";
+
 // Re-export commonly used types for convenience
 export type {
   RetryConfig,
