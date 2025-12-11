@@ -6,6 +6,7 @@ import { ProgressTracker } from "./progress/ProgressTracker";
 import { ErrorHandler } from "./errors/ErrorHandler";
 import { CircuitBreaker } from "./errors/CircuitBreaker";
 import { EncryptionManager } from "./encryption/EncryptionManager";
+import { RateLimiter } from "./utils/RateLimiter";
 import {
   LighthouseConfig,
   UploadOptions,
@@ -65,6 +66,7 @@ export class LighthouseAISDK extends EventEmitter {
   private errorHandler: ErrorHandler;
   private circuitBreaker: CircuitBreaker;
   private encryption: EncryptionManager;
+  private rateLimiter: RateLimiter;
   private config: LighthouseConfig;
 
   constructor(config: LighthouseConfig) {
@@ -78,6 +80,7 @@ export class LighthouseAISDK extends EventEmitter {
     });
     this.circuitBreaker = new CircuitBreaker();
     this.encryption = new EncryptionManager();
+    this.rateLimiter = new RateLimiter(10, 1, 1000); // 10 requests per second
 
     // Forward authentication events
     this.auth.on("auth:error", (error) => this.emit("auth:error", error));
@@ -122,6 +125,17 @@ export class LighthouseAISDK extends EventEmitter {
     this.encryption.on("access:control:error", (event) =>
       this.emit("encryption:access:control:error", event),
     );
+  }
+
+  /**
+   * Execute operation with rate limiting
+   */
+  private async executeWithRateLimit<T>(
+    operation: () => Promise<T>,
+    operationName: string,
+  ): Promise<T> {
+    await this.rateLimiter.acquire();
+    return this.circuitBreaker.execute(operation, operationName);
   }
 
   /**
@@ -200,7 +214,7 @@ export class LighthouseAISDK extends EventEmitter {
   async uploadFile(filePath: string, options: UploadOptions = {}): Promise<FileInfo> {
     const operationId = generateOperationId();
 
-    return this.circuitBreaker.execute(async () => {
+    return this.executeWithRateLimit(async () => {
       return this.errorHandler.executeWithRetry(async () => {
         try {
           // Validate file exists and get size
@@ -385,7 +399,7 @@ Maximum file size may be exceeded. Try uploading a smaller file.`);
   ): Promise<string> {
     const operationId = generateOperationId();
 
-    return this.circuitBreaker.execute(async () => {
+    return this.executeWithRateLimit(async () => {
       return this.errorHandler.executeWithRetry(async () => {
         try {
           // Start progress tracking
@@ -435,7 +449,7 @@ Maximum file size may be exceeded. Try uploading a smaller file.`);
    * ```
    */
   async getFileInfo(cid: string): Promise<FileInfo> {
-    return this.circuitBreaker.execute(async () => {
+    return this.executeWithRateLimit(async () => {
       return this.errorHandler.executeWithRetry(async () => {
         // Get file status from Lighthouse (doesn't require auth for public files)
         const statusResponse = await lighthouse.getFileInfo(cid);
@@ -483,7 +497,7 @@ Maximum file size may be exceeded. Try uploading a smaller file.`);
    * ```
    */
   async listFiles(limit: number = 10, offset: number = 0): Promise<ListFilesResponse> {
-    return this.circuitBreaker.execute(async () => {
+    return this.executeWithRateLimit(async () => {
       return this.errorHandler.executeWithRetry(async () => {
         const apiKey = this.config.apiKey;
 
@@ -538,7 +552,7 @@ Maximum file size may be exceeded. Try uploading a smaller file.`);
    * ```
    */
   async generateEncryptionKey(threshold: number = 3, keyCount: number = 5): Promise<GeneratedKey> {
-    return this.circuitBreaker.execute(async () => {
+    return this.executeWithRateLimit(async () => {
       return this.errorHandler.executeWithRetry(async () => {
         return await this.encryption.generateKey(threshold, keyCount);
       }, "generateEncryptionKey");
@@ -564,7 +578,7 @@ Maximum file size may be exceeded. Try uploading a smaller file.`);
     threshold: number = 3,
     keyCount: number = 5,
   ): Promise<{ keyShards: KeyShard[] }> {
-    return this.circuitBreaker.execute(async () => {
+    return this.executeWithRateLimit(async () => {
       return this.errorHandler.executeWithRetry(async () => {
         return await this.encryption.shardKey(masterKey, threshold, keyCount);
       }, "shardEncryptionKey");
@@ -605,7 +619,7 @@ Maximum file size may be exceeded. Try uploading a smaller file.`);
     config: AccessControlConfig,
     authToken: AuthToken,
   ): Promise<EncryptionResponse> {
-    return this.circuitBreaker.execute(async () => {
+    return this.executeWithRateLimit(async () => {
       return this.errorHandler.executeWithRetry(async () => {
         return await this.encryption.setupAccessControl(config, authToken);
       }, "setupAccessControl");
@@ -632,7 +646,7 @@ Maximum file size may be exceeded. Try uploading a smaller file.`);
   async recoverEncryptionKey(
     keyShards: KeyShard[],
   ): Promise<{ masterKey: string | null; error: string | null }> {
-    return this.circuitBreaker.execute(async () => {
+    return this.executeWithRateLimit(async () => {
       return this.errorHandler.executeWithRetry(async () => {
         return await this.encryption.recoverKey(keyShards);
       }, "recoverEncryptionKey");
@@ -664,7 +678,7 @@ Maximum file size may be exceeded. Try uploading a smaller file.`);
     shareToAddress: string,
     authToken: AuthToken,
   ): Promise<EncryptionResponse> {
-    return this.circuitBreaker.execute(async () => {
+    return this.executeWithRateLimit(async () => {
       return this.errorHandler.executeWithRetry(async () => {
         return await this.encryption.shareToAddress(cid, ownerAddress, shareToAddress, authToken);
       }, "shareFileAccess");
@@ -690,7 +704,7 @@ Maximum file size may be exceeded. Try uploading a smaller file.`);
   async getEncryptionAuthMessage(
     address: string,
   ): Promise<{ message: string | null; error: string | null }> {
-    return this.circuitBreaker.execute(async () => {
+    return this.executeWithRateLimit(async () => {
       return this.errorHandler.executeWithRetry(async () => {
         return await this.encryption.getAuthMessage(address);
       }, "getEncryptionAuthMessage");
@@ -705,7 +719,7 @@ Maximum file size may be exceeded. Try uploading a smaller file.`);
    * @returns JWT token
    */
   async getEncryptionJWT(address: string, signedMessage: string): Promise<string | null> {
-    return this.circuitBreaker.execute(async () => {
+    return this.executeWithRateLimit(async () => {
       return this.errorHandler.executeWithRetry(async () => {
         return await this.encryption.getJWT(address, signedMessage);
       }, "getEncryptionJWT");
@@ -814,7 +828,7 @@ Maximum file size may be exceeded. Try uploading a smaller file.`);
   async createDataset(filePaths: string[], options: DatasetOptions): Promise<DatasetInfo> {
     const operationId = generateOperationId();
 
-    return this.circuitBreaker.execute(async () => {
+    return this.executeWithRateLimit(async () => {
       return this.errorHandler.executeWithRetry(async () => {
         try {
           // Validate inputs
@@ -916,7 +930,7 @@ Maximum file size may be exceeded. Try uploading a smaller file.`);
   ): Promise<DatasetInfo> {
     const operationId = generateOperationId();
 
-    return this.circuitBreaker.execute(async () => {
+    return this.executeWithRateLimit(async () => {
       return this.errorHandler.executeWithRetry(async () => {
         try {
           // Start progress tracking
@@ -987,7 +1001,7 @@ Maximum file size may be exceeded. Try uploading a smaller file.`);
    * ```
    */
   async getDataset(datasetId: string): Promise<DatasetInfo> {
-    return this.circuitBreaker.execute(async () => {
+    return this.executeWithRateLimit(async () => {
       return this.errorHandler.executeWithRetry(async () => {
         // For now, return a mock dataset since we don't have persistent storage
         // In a real implementation, this would fetch from a database or metadata service
@@ -1029,7 +1043,7 @@ Maximum file size may be exceeded. Try uploading a smaller file.`);
    * ```
    */
   async listDatasets(limit: number = 10, offset: number = 0): Promise<ListDatasetsResponse> {
-    return this.circuitBreaker.execute(async () => {
+    return this.executeWithRateLimit(async () => {
       return this.errorHandler.executeWithRetry(async () => {
         // For now, return mock datasets since we don't have persistent storage
         // In a real implementation, this would fetch from a database or metadata service
@@ -1082,7 +1096,7 @@ Maximum file size may be exceeded. Try uploading a smaller file.`);
    * ```
    */
   async deleteDataset(datasetId: string, deleteFiles: boolean = false): Promise<void> {
-    return this.circuitBreaker.execute(async () => {
+    return this.executeWithRateLimit(async () => {
       return this.errorHandler.executeWithRetry(async () => {
         // For now, just simulate deletion since we don't have persistent storage
         // In a real implementation, this would:
