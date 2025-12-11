@@ -37,7 +37,7 @@ describe("AuthManager", () => {
 
   describe("validateApiKey", () => {
     it("should validate API key with correct format", async () => {
-      const apiKey = "valid-api-key-12345";
+      const apiKey = "test-api-key-12345";
       const result = await authManager.validateApiKey(apiKey);
 
       expect(result.isValid).toBe(true);
@@ -54,7 +54,7 @@ describe("AuthManager", () => {
     });
 
     it("should cache validation results", async () => {
-      const apiKey = "valid-api-key-12345";
+      const apiKey = "test-api-key-12345";
 
       const result1 = await authManager.validateApiKey(apiKey);
       const result2 = await authManager.validateApiKey(apiKey);
@@ -127,7 +127,7 @@ describe("AuthManager", () => {
 
   describe("authenticate", () => {
     it("should authenticate with valid request key", async () => {
-      const requestKey = "valid-request-key-12345";
+      const requestKey = "test-api-key-12345";
       const result = await authManager.authenticate(requestKey);
 
       expect(result.success).toBe(true);
@@ -153,7 +153,7 @@ describe("AuthManager", () => {
     });
 
     it("should track authentication time", async () => {
-      const result = await authManager.authenticate("valid-key-12345");
+      const result = await authManager.authenticate("test-api-key-12345");
 
       expect(result.authTime).toBeGreaterThanOrEqual(0);
       expect(result.authTime).toBeLessThan(1000); // Should be fast
@@ -181,7 +181,7 @@ describe("AuthManager", () => {
 
   describe("invalidateKey", () => {
     it("should invalidate cached key", async () => {
-      const apiKey = "valid-api-key-12345";
+      const apiKey = "test-api-key-12345";
 
       // Validate and cache
       await authManager.validateApiKey(apiKey);
@@ -197,8 +197,8 @@ describe("AuthManager", () => {
 
   describe("getCacheStats", () => {
     it("should return cache statistics", async () => {
-      await authManager.validateApiKey("key1-valid-12345");
-      await authManager.validateApiKey("key2-valid-12345");
+      await authManager.validateApiKey("test-api-key-1-12345");
+      await authManager.validateApiKey("test-api-key-2-12345");
 
       const stats = authManager.getCacheStats();
 
