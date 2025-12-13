@@ -60,6 +60,16 @@ export type {
 // Error handling types
 export type { RetryPolicy, ErrorMetrics, CircuitBreakerConfig } from "./errors/types";
 
+// Performance and caching modules
+export { LRUCache, CacheManager } from "./cache";
+export type { CacheManagerConfig, CacheOptions } from "./cache";
+export { ConnectionPool } from "./pool";
+export type { ConnectionPoolConfig } from "./pool";
+export { BatchProcessor } from "./batch";
+export type { BatchOptions, BatchOperation, BatchResult, BatchStats } from "./batch";
+export { MemoryManager } from "./memory";
+export type { MemoryManagerConfig, MemoryStats } from "./memory";
+
 // Utility functions
 export {
   generateOperationId,
