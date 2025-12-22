@@ -93,7 +93,7 @@ export const DEFAULT_SERVER_CONFIG: ServerConfig = {
   version: "0.1.0",
   logLevel: "info",
   maxStorageSize: 1024 * 1024 * 1024, // 1GB
-  enableMetrics: true,
+  enableMetrics: false, // Disabled by default to avoid interfering with MCP stdio protocol
   metricsInterval: 60000, // 1 minute
   lighthouseApiKey: process.env.LIGHTHOUSE_API_KEY,
   authentication: DEFAULT_AUTH_CONFIG,

@@ -8,6 +8,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
   ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { Logger } from "@lighthouse-tooling/shared";
 
@@ -359,7 +360,23 @@ export class LighthouseMCPServer {
     // Handle ListResources
     this.server.setRequestHandler(ListResourcesRequestSchema, async () => {
       const files = await this.lighthouseService.listFiles();
-      const datasets = this.datasetService.listDatasets();
+
+      // Get datasets from LighthouseService (where they're actually stored)
+      let datasets: any[] = [];
+      try {
+        const datasetsResponse = await this.lighthouseService.listDatasets({
+          limit: 100,
+          offset: 0,
+        });
+        datasets = datasetsResponse.datasets || [];
+      } catch (error) {
+        // Fallback to MockDatasetService if LighthouseService fails
+        this.logger.debug(
+          "Failed to get datasets from LighthouseService, using MockDatasetService",
+          error as Error,
+        );
+        datasets = this.datasetService.listDatasets();
+      }
 
       const resources = [
         ...files.map((file) => ({
@@ -377,6 +394,138 @@ export class LighthouseMCPServer {
       ];
 
       return { resources };
+    });
+
+    // Handle ReadResource
+    this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+      const uri = request.params.uri;
+      this.logger.info("Reading resource", { uri });
+
+      try {
+        // Parse URI: lighthouse://dataset/{id} or lighthouse://file/{cid}
+        if (uri.startsWith("lighthouse://dataset/")) {
+          const datasetId = uri.replace("lighthouse://dataset/", "");
+          const dataset = await this.lighthouseService.getDataset(datasetId);
+
+          if (!dataset) {
+            throw new Error(`Dataset not found: ${datasetId}`);
+          }
+
+          // Clean and serialize dataset with proper handling
+          const cleanedDataset: Record<string, any> = {
+            id: String(dataset.id || ""),
+            name: String(dataset.name || ""),
+            description: String(dataset.description || ""),
+            files: (dataset.files || []).map((file: any) => {
+              const cleanedFile: Record<string, any> = {
+                cid: String(file.cid || ""),
+                size: Number(file.size || 0),
+                encrypted: Boolean(file.encrypted),
+                uploadedAt:
+                  file.uploadedAt instanceof Date
+                    ? file.uploadedAt.toISOString()
+                    : String(file.uploadedAt || ""),
+              };
+              if (file.hash) {
+                cleanedFile.hash = String(file.hash);
+              }
+              return cleanedFile;
+            }),
+            metadata: dataset.metadata || {},
+            version: String(dataset.version || "1.0.0"),
+            createdAt:
+              dataset.createdAt instanceof Date
+                ? dataset.createdAt.toISOString()
+                : String(dataset.createdAt || ""),
+            updatedAt:
+              dataset.updatedAt instanceof Date
+                ? dataset.updatedAt.toISOString()
+                : String(dataset.updatedAt || ""),
+            encrypted: Boolean(dataset.encrypted),
+          };
+
+          // Only add accessConditions if it exists and is not empty
+          if (
+            dataset.accessConditions &&
+            Array.isArray(dataset.accessConditions) &&
+            dataset.accessConditions.length > 0
+          ) {
+            cleanedDataset.accessConditions = dataset.accessConditions;
+          }
+
+          // Serialize with error handling
+          let serializedDataset: string;
+          try {
+            serializedDataset = JSON.stringify(cleanedDataset, null, 2);
+          } catch (error) {
+            this.logger.error("Failed to serialize dataset", error as Error, { datasetId });
+            throw new Error(
+              `Failed to serialize dataset: ${error instanceof Error ? error.message : "Unknown error"}`,
+            );
+          }
+
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: "application/json",
+                text: serializedDataset,
+              },
+            ],
+          };
+        } else if (uri.startsWith("lighthouse://file/")) {
+          const cid = uri.replace("lighthouse://file/", "");
+          const file = await this.lighthouseService.getFileInfo(cid);
+
+          if (!file) {
+            throw new Error(`File not found: ${cid}`);
+          }
+
+          // Clean and serialize file with proper handling
+          const cleanedFile: Record<string, any> = {
+            cid: String(file.cid || ""),
+            filePath: String(file.filePath || ""),
+            size: Number(file.size || 0),
+            encrypted: Boolean(file.encrypted),
+            uploadedAt:
+              file.uploadedAt instanceof Date
+                ? file.uploadedAt.toISOString()
+                : String(file.uploadedAt || ""),
+            pinned: Boolean(file.pinned),
+          };
+
+          // Only add hash if it exists
+          if (file.hash) {
+            cleanedFile.hash = String(file.hash);
+          }
+
+          // Serialize with error handling
+          let serializedFile: string;
+          try {
+            serializedFile = JSON.stringify(cleanedFile, null, 2);
+          } catch (error) {
+            this.logger.error("Failed to serialize file", error as Error, { cid });
+            throw new Error(
+              `Failed to serialize file: ${error instanceof Error ? error.message : "Unknown error"}`,
+            );
+          }
+
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: "application/json",
+                text: serializedFile,
+              },
+            ],
+          };
+        } else {
+          throw new Error(`Unknown resource URI format: ${uri}`);
+        }
+      } catch (error) {
+        this.logger.error("Failed to read resource", error as Error, { uri });
+        throw error;
+      }
     });
 
     this.logger.info("Request handlers setup complete");
