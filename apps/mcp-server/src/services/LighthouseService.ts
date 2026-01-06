@@ -11,7 +11,7 @@ import { DatabaseService } from "../storage/DatabaseService.js";
 export class LighthouseService implements ILighthouseService {
   private sdk: LighthouseAISDK;
   private logger: Logger;
-  private database: DatabaseService;
+  private database: DatabaseService | null = null;
   // Keep in-memory cache for performance (LRU cache can be added later)
   private fileCache: Map<string, StoredFile> = new Map();
   private datasetCache: Map<string, Dataset> = new Map();
@@ -19,8 +19,18 @@ export class LighthouseService implements ILighthouseService {
   constructor(apiKey: string, logger?: Logger, dbPath?: string) {
     this.logger = logger || Logger.getInstance({ level: "info", component: "LighthouseService" });
 
-    // Initialize database service
-    this.database = new DatabaseService({ dbPath });
+    // Initialize database service (optional - may fail if better-sqlite3 not built)
+    try {
+      this.database = new DatabaseService({ dbPath });
+    } catch (error) {
+      // Sanitize error to avoid JSON serialization issues with better-sqlite3 error objects
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.warn(
+        "Database service unavailable, using in-memory storage only",
+        new Error(errorMessage),
+      );
+      this.database = null;
+    }
 
     this.sdk = new LighthouseAISDK({
       apiKey,
@@ -35,6 +45,13 @@ export class LighthouseService implements ILighthouseService {
     this.logger.info("Real Lighthouse Service initialized", {
       apiKey: apiKey.substring(0, 8) + "...",
     });
+  }
+
+  /**
+   * Check if database is available
+   */
+  private getDatabase(): DatabaseService | null {
+    return this.database;
   }
 
   /**
@@ -139,7 +156,9 @@ export class LighthouseService implements ILighthouseService {
       };
 
       // Persist to database
-      this.database.saveFile(storedFile);
+      if (this.database) {
+        this.database.saveFile(storedFile);
+      }
       // Update cache
       this.fileCache.set(fileInfo.hash, storedFile);
 
@@ -224,7 +243,9 @@ export class LighthouseService implements ILighthouseService {
       await this.sdk.getFileInfo(cid);
 
       // Update database and cache
-      this.database.updateFilePinned(cid, true);
+      if (this.database) {
+        this.database.updateFilePinned(cid, true);
+      }
       const cachedFile = this.fileCache.get(cid);
       if (cachedFile) {
         cachedFile.pinned = true;
@@ -251,7 +272,9 @@ export class LighthouseService implements ILighthouseService {
       this.logger.info("Unpinning file", { cid });
 
       // Update database and cache
-      this.database.updateFilePinned(cid, false);
+      if (this.database) {
+        this.database.updateFilePinned(cid, false);
+      }
       const cachedFile = this.fileCache.get(cid);
       if (cachedFile) {
         cachedFile.pinned = false;
@@ -282,7 +305,7 @@ export class LighthouseService implements ILighthouseService {
       }
 
       // Try database
-      const dbFile = this.database.getFile(cid);
+      const dbFile = this.database?.getFile(cid);
       if (dbFile) {
         this.fileCache.set(cid, dbFile);
         return dbFile;
@@ -302,7 +325,9 @@ export class LighthouseService implements ILighthouseService {
       };
 
       // Persist to database and cache
-      this.database.saveFile(storedFile);
+      if (this.database) {
+        this.database.saveFile(storedFile);
+      }
       this.fileCache.set(cid, storedFile);
 
       return storedFile;
@@ -318,7 +343,7 @@ export class LighthouseService implements ILighthouseService {
   async listFiles(): Promise<StoredFile[]> {
     try {
       // Try to get from database first (faster)
-      const dbFiles = this.database.listFiles();
+      const dbFiles = this.database?.listFiles() || [];
       if (dbFiles.length > 0) {
         // Update cache
         dbFiles.forEach((file) => {
@@ -328,7 +353,16 @@ export class LighthouseService implements ILighthouseService {
       }
 
       // Fallback to SDK if database is empty
-      const response = await this.sdk.listFiles(100, 0); // Get up to 100 files
+      // Note: getUploads API may not be available for all API keys
+      let response;
+      try {
+        response = await this.sdk.listFiles(100, 0); // Get up to 100 files
+      } catch (error) {
+        // If SDK listFiles fails (e.g., API endpoint not available), return cached files
+        this.logger.debug("SDK listFiles not available, using cache only", error as Error);
+        const cachedFiles = Array.from(this.fileCache.values());
+        return cachedFiles;
+      }
 
       const files: StoredFile[] = response.files.map((fileInfo) => {
         const storedFile: StoredFile = {
@@ -342,7 +376,9 @@ export class LighthouseService implements ILighthouseService {
         };
 
         // Persist to database and update cache
-        this.database.saveFile(storedFile);
+        if (this.database) {
+          this.database.saveFile(storedFile);
+        }
         this.fileCache.set(fileInfo.hash, storedFile);
 
         return storedFile;
@@ -365,8 +401,8 @@ export class LighthouseService implements ILighthouseService {
     utilization: number;
   } {
     // Get stats from database (more accurate)
-    const fileCount = this.database.getFileCount();
-    const totalSize = this.database.getTotalSize();
+    const fileCount = this.database?.getFileCount() || 0;
+    const totalSize = this.database?.getTotalSize() || 0;
 
     return {
       fileCount,
@@ -524,7 +560,9 @@ export class LighthouseService implements ILighthouseService {
   clear(): void {
     this.fileCache.clear();
     this.datasetCache.clear();
-    this.database.clear();
+    if (this.database) {
+      this.database.clear();
+    }
     this.logger.info("Cache and database cleared");
   }
 
@@ -585,7 +623,9 @@ export class LighthouseService implements ILighthouseService {
       };
 
       // Persist to database and cache
-      this.database.saveDataset(dataset);
+      if (this.database) {
+        this.database.saveDataset(dataset);
+      }
       this.datasetCache.set(dataset.id, dataset);
 
       this.logger.info("Dataset created successfully", {
@@ -652,7 +692,9 @@ export class LighthouseService implements ILighthouseService {
       };
 
       // Persist to database and update cache
-      this.database.saveDataset(dataset);
+      if (this.database) {
+        this.database.saveDataset(dataset);
+      }
       this.datasetCache.set(dataset.id, dataset);
 
       this.logger.info("Dataset updated successfully", {
@@ -680,7 +722,7 @@ export class LighthouseService implements ILighthouseService {
       }
 
       // Try database
-      const dbDataset = this.database.getDataset(datasetId);
+      const dbDataset = this.database?.getDataset(datasetId);
       if (dbDataset) {
         this.datasetCache.set(datasetId, dbDataset);
         return dbDataset;
@@ -716,7 +758,9 @@ export class LighthouseService implements ILighthouseService {
       };
 
       // Persist to database and cache
-      this.database.saveDataset(dataset);
+      if (this.database) {
+        this.database.saveDataset(dataset);
+      }
       this.datasetCache.set(dataset.id, dataset);
 
       return dataset;
@@ -739,7 +783,7 @@ export class LighthouseService implements ILighthouseService {
       const offset = params?.offset || 0;
 
       // Try to get from database first (faster and more accurate)
-      const dbResult = this.database.listDatasets(limit, offset);
+      const dbResult = this.database?.listDatasets(limit, offset) || { datasets: [], total: 0 };
       if (dbResult.total > 0) {
         // Update cache
         dbResult.datasets.forEach((dataset) => {
@@ -782,7 +826,9 @@ export class LighthouseService implements ILighthouseService {
         };
 
         // Persist to database and cache
-        this.database.saveDataset(dataset);
+        if (this.database) {
+          this.database.saveDataset(dataset);
+        }
         this.datasetCache.set(dataset.id, dataset);
 
         return dataset;
@@ -814,7 +860,9 @@ export class LighthouseService implements ILighthouseService {
       await this.sdk.deleteDataset(datasetId, deleteFiles);
 
       // Remove from database and cache
-      this.database.deleteDataset(datasetId, deleteFiles);
+      if (this.database) {
+        this.database.deleteDataset(datasetId, deleteFiles);
+      }
       this.datasetCache.delete(datasetId);
 
       this.logger.info("Dataset deleted successfully", { datasetId });
@@ -831,7 +879,9 @@ export class LighthouseService implements ILighthouseService {
     this.sdk.destroy();
     this.fileCache.clear();
     this.datasetCache.clear();
-    this.database.close();
+    if (this.database) {
+      this.database.close();
+    }
     this.logger.info("Lighthouse service destroyed");
   }
 }

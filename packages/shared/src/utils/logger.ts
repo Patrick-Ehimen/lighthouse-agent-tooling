@@ -197,15 +197,16 @@ export class Logger {
 
     const logMessage = `${prefix} ${message}${contextStr}`;
 
+    // For MCP stdio transport, all logs should go to stderr to avoid interfering with JSON-RPC on stdout
     switch (level) {
       case "debug":
-        console.debug(logMessage);
+        console.error(logMessage); // Redirect to stderr
         break;
       case "info":
-        console.info(logMessage);
+        console.error(logMessage); // Redirect to stderr
         break;
       case "warn":
-        console.warn(logMessage);
+        console.error(logMessage); // Already stderr, but be explicit
         break;
       case "error":
       case "fatal":
