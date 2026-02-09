@@ -24,7 +24,7 @@
     "@lighthouse-web3/kavach": "^0.2.1",
     "eventemitter3": "^5.0.1",
     "axios": "^1.6.0",
-    "form-data": "^4.0.0"
+    "form-data": "^4.0.5"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
