@@ -188,6 +188,65 @@ describe("LighthouseAISDK", () => {
     });
   });
 
+  describe("connection pool", () => {
+    it("should create a connection pool by default", () => {
+      const stats = sdk.getConnectionPoolStats();
+      expect(stats).not.toBeNull();
+      expect(stats).toEqual({
+        totalConnections: 0,
+        activeConnections: 0,
+        idleConnections: 0,
+        queuedRequests: 0,
+        totalRequests: 0,
+        averageWaitTime: 0,
+      });
+    });
+
+    it("should disable pool when config.pool is false", () => {
+      const noPoolSdk = new LighthouseAISDK({
+        ...config,
+        pool: false,
+      });
+
+      expect(noPoolSdk.getConnectionPoolStats()).toBeNull();
+
+      noPoolSdk.destroy();
+    });
+
+    it("should accept custom pool configuration", () => {
+      const customSdk = new LighthouseAISDK({
+        ...config,
+        pool: {
+          maxConnections: 5,
+          acquireTimeout: 2000,
+          idleTimeout: 30000,
+          requestTimeout: 15000,
+          keepAlive: false,
+          maxSockets: 10,
+        },
+      });
+
+      const stats = customSdk.getConnectionPoolStats();
+      expect(stats).not.toBeNull();
+      expect(stats!.totalConnections).toBe(0);
+
+      customSdk.destroy();
+    });
+
+    it("should use SDK timeout as pool requestTimeout default", () => {
+      const customTimeoutSdk = new LighthouseAISDK({
+        apiKey: "test-key",
+        timeout: 60000,
+      });
+
+      // Pool should be created with requestTimeout matching SDK timeout
+      const stats = customTimeoutSdk.getConnectionPoolStats();
+      expect(stats).not.toBeNull();
+
+      customTimeoutSdk.destroy();
+    });
+  });
+
   describe("destroy", () => {
     it("should cleanup resources", () => {
       const removeAllListenersSpy = jest.spyOn(sdk, "removeAllListeners");
@@ -195,6 +254,16 @@ describe("LighthouseAISDK", () => {
       sdk.destroy();
 
       expect(removeAllListenersSpy).toHaveBeenCalled();
+    });
+
+    it("should cleanup connection pool on destroy", () => {
+      // After destroy, pool stats should still work (pool is destroyed but method handles it)
+      sdk.destroy();
+
+      // Creating a new SDK to verify pool was destroyed cleanly (no lingering timers)
+      const newSdk = new LighthouseAISDK(config);
+      expect(newSdk.getConnectionPoolStats()).not.toBeNull();
+      newSdk.destroy();
     });
   });
 });

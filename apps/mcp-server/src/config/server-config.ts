@@ -7,6 +7,13 @@ import { MultiTenancyConfig, OrganizationSettings, UsageQuota } from "@lighthous
 import * as path from "path";
 import * as os from "os";
 
+export interface ConnectionPoolServerConfig {
+  maxConnections: number;
+  idleTimeoutMs: number;
+  requestTimeoutMs: number;
+  keepAlive: boolean;
+}
+
 export interface ServerConfig {
   name: string;
   version: string;
@@ -19,6 +26,7 @@ export interface ServerConfig {
   authentication?: AuthConfig;
   performance?: PerformanceConfig;
   multiTenancy?: MultiTenancyConfig;
+  connectionPool?: ConnectionPoolServerConfig;
 }
 
 /**
@@ -71,6 +79,13 @@ export const DEFAULT_PERFORMANCE_CONFIG: PerformanceConfig = {
   servicePoolSize: 50,
   serviceTimeoutMinutes: 30,
   concurrentRequestLimit: 100,
+};
+
+export const DEFAULT_CONNECTION_POOL_CONFIG: ConnectionPoolServerConfig = {
+  maxConnections: parseInt(process.env.LIGHTHOUSE_POOL_MAX_CONNECTIONS || "10", 10),
+  idleTimeoutMs: parseInt(process.env.LIGHTHOUSE_POOL_IDLE_TIMEOUT || "60000", 10),
+  requestTimeoutMs: parseInt(process.env.LIGHTHOUSE_POOL_REQUEST_TIMEOUT || "30000", 10),
+  keepAlive: process.env.LIGHTHOUSE_POOL_KEEP_ALIVE !== "false",
 };
 
 export const DEFAULT_ORGANIZATION_SETTINGS: OrganizationSettings = {
@@ -131,6 +146,7 @@ export function getDefaultServerConfig(): ServerConfig {
     authentication: getDefaultAuthConfig(),
     performance: DEFAULT_PERFORMANCE_CONFIG,
     multiTenancy: DEFAULT_MULTI_TENANCY_CONFIG,
+    connectionPool: DEFAULT_CONNECTION_POOL_CONFIG,
   };
 }
 
@@ -149,6 +165,7 @@ export const DEFAULT_SERVER_CONFIG: ServerConfig = {
   authentication: DEFAULT_AUTH_CONFIG,
   performance: DEFAULT_PERFORMANCE_CONFIG,
   multiTenancy: DEFAULT_MULTI_TENANCY_CONFIG,
+  connectionPool: DEFAULT_CONNECTION_POOL_CONFIG,
 };
 
 /**

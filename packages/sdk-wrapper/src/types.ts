@@ -1,4 +1,5 @@
 import { AccessCondition } from "@lighthouse-tooling/types";
+import { ConnectionPoolConfig } from "./pool/ConnectionPool";
 
 /**
  * Configuration options for the Lighthouse AI SDK
@@ -14,6 +15,8 @@ export interface LighthouseConfig {
   maxRetries?: number;
   /** Enable debug logging */
   debug?: boolean;
+  /** Connection pool configuration. Omit for default settings. Set to false to disable pooling. */
+  pool?: ConnectionPoolConfig | false;
 }
 
 /**
