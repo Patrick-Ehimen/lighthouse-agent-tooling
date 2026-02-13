@@ -14,6 +14,7 @@ export { MockDatasetService } from "./services/MockDatasetService.js";
 export * from "./registry/types.js";
 export * from "./config/server-config.js";
 export { EnvLoader } from "./config/env-loader.js";
+export { HealthCheckServer } from "./health/index.js";
 
 /**
  * Main entry point when run as a script
@@ -42,6 +43,7 @@ Options:
   --name <name>          Set server name [default: lighthouse-storage]
   --version <version>    Set server version [default: 0.1.0]
   --api-key <key>        Set Lighthouse API key (or use LIGHTHOUSE_API_KEY env var)
+  --health-port <port>   Enable health check server on given port [default: 8080]
   --env <path>           Path to .env file [default: .env]
   --show-config          Display current configuration and exit
   --help                 Show this help message
@@ -54,6 +56,9 @@ Environment Variables:
   ENABLE_METRICS         Enable metrics collection (true/false)
   METRICS_INTERVAL       Metrics collection interval in ms
   LIGHTHOUSE_API_KEY     Lighthouse API key
+  HEALTH_CHECK_ENABLED   Enable health check server (true/false)
+  HEALTH_CHECK_PORT      Health check server port [default: 8080]
+  LIGHTHOUSE_API_URL     Lighthouse API URL for connectivity checks
 
 Examples:
   node dist/index.js --log-level debug
@@ -95,6 +100,16 @@ Examples:
         case "--api-key":
           i++;
           if (args[i]) config.lighthouseApiKey = args[i];
+          break;
+        case "--health-port":
+          i++;
+          if (args[i] !== undefined) {
+            if (!config.healthCheck) {
+              config.healthCheck = { enabled: true, port: 8080 };
+            }
+            config.healthCheck.port = parseInt(args[i]!, 10);
+            config.healthCheck.enabled = true;
+          }
           break;
         case "--env":
           i++;

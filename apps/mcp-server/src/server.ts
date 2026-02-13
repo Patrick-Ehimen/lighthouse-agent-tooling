@@ -30,6 +30,7 @@ import { AuthManager } from "./auth/AuthManager.js";
 import { LighthouseServiceFactory } from "./auth/LighthouseServiceFactory.js";
 import { RequestContext } from "./auth/RequestContext.js";
 import { AuthenticationError } from "./errors/AuthenticationError.js";
+import { HealthCheckServer } from "./health/index.js";
 
 export class LighthouseMCPServer {
   private server: Server;
@@ -42,6 +43,9 @@ export class LighthouseMCPServer {
   // Authentication components
   private authManager: AuthManager;
   private serviceFactory: LighthouseServiceFactory;
+
+  // Health check server
+  private healthServer: HealthCheckServer | null = null;
 
   constructor(
     config: Partial<ServerConfig> = {},
@@ -415,6 +419,25 @@ export class LighthouseMCPServer {
       const transport = new StdioServerTransport();
       await this.server.connect(transport);
 
+      // Start health check server if configured
+      if (this.config.healthCheck?.enabled) {
+        this.healthServer = new HealthCheckServer(
+          {
+            authManager: this.authManager,
+            serviceFactory: this.serviceFactory,
+            lighthouseService: this.lighthouseService,
+            registry: this.registry,
+            config: this.config,
+            logger: this.logger,
+          },
+          this.config.healthCheck,
+        );
+        await this.healthServer.start();
+        this.logger.info("Health check server started", {
+          port: this.config.healthCheck.port,
+        });
+      }
+
       const startupTime = Date.now() - startTime;
       this.logger.info("Lighthouse MCP Server started successfully", {
         startupTime,
@@ -460,6 +483,12 @@ export class LighthouseMCPServer {
   async stop(): Promise<void> {
     try {
       this.logger.info("Stopping server...");
+
+      // Stop health check server
+      if (this.healthServer) {
+        await this.healthServer.stop();
+        this.healthServer = null;
+      }
 
       // Cleanup authentication resources
       if (this.authManager) {

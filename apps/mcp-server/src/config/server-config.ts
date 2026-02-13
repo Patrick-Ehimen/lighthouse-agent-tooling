@@ -4,6 +4,7 @@
 
 import { AuthConfig, PerformanceConfig } from "../auth/types.js";
 import { MultiTenancyConfig, OrganizationSettings, UsageQuota } from "@lighthouse-tooling/types";
+import { HealthCheckConfig } from "../health/types.js";
 import * as path from "path";
 import * as os from "os";
 
@@ -27,6 +28,7 @@ export interface ServerConfig {
   performance?: PerformanceConfig;
   multiTenancy?: MultiTenancyConfig;
   connectionPool?: ConnectionPoolServerConfig;
+  healthCheck?: HealthCheckConfig;
 }
 
 /**
@@ -88,6 +90,14 @@ export const DEFAULT_CONNECTION_POOL_CONFIG: ConnectionPoolServerConfig = {
   keepAlive: process.env.LIGHTHOUSE_POOL_KEEP_ALIVE !== "false",
 };
 
+export const DEFAULT_HEALTH_CHECK_CONFIG: HealthCheckConfig = {
+  enabled: process.env.HEALTH_CHECK_ENABLED === "true",
+  port: parseInt(process.env.HEALTH_CHECK_PORT || "8080", 10),
+  lighthouseApiUrl: process.env.LIGHTHOUSE_API_URL || "https://api.lighthouse.storage",
+  connectivityCheckInterval: 30000,
+  connectivityTimeout: 5000,
+};
+
 export const DEFAULT_ORGANIZATION_SETTINGS: OrganizationSettings = {
   defaultStorageQuota: 10 * 1024 * 1024 * 1024, // 10GB
   defaultRateLimit: 1000, // 1000 requests per minute
@@ -147,6 +157,7 @@ export function getDefaultServerConfig(): ServerConfig {
     performance: DEFAULT_PERFORMANCE_CONFIG,
     multiTenancy: DEFAULT_MULTI_TENANCY_CONFIG,
     connectionPool: DEFAULT_CONNECTION_POOL_CONFIG,
+    healthCheck: DEFAULT_HEALTH_CHECK_CONFIG,
   };
 }
 
@@ -166,6 +177,7 @@ export const DEFAULT_SERVER_CONFIG: ServerConfig = {
   performance: DEFAULT_PERFORMANCE_CONFIG,
   multiTenancy: DEFAULT_MULTI_TENANCY_CONFIG,
   connectionPool: DEFAULT_CONNECTION_POOL_CONFIG,
+  healthCheck: DEFAULT_HEALTH_CHECK_CONFIG,
 };
 
 /**
