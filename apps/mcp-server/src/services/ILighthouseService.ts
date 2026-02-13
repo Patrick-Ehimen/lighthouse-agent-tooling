@@ -3,7 +3,14 @@
  */
 
 import { UploadResult, DownloadResult, AccessCondition, Dataset } from "@lighthouse-tooling/types";
-import { EnhancedAccessCondition } from "@lighthouse-tooling/sdk-wrapper";
+import {
+  EnhancedAccessCondition,
+  BatchUploadOptions,
+  BatchDownloadOptions,
+  BatchOperationResult,
+  BatchDownloadFileResult,
+  FileInfo,
+} from "@lighthouse-tooling/sdk-wrapper";
 
 export interface StoredFile {
   cid: string;
@@ -150,4 +157,20 @@ export interface ILighthouseService {
     success: boolean;
     error?: string;
   }>;
+
+  /**
+   * Batch upload multiple files with configurable concurrency
+   */
+  batchUploadFiles(
+    filePaths: string[],
+    options?: BatchUploadOptions,
+  ): Promise<BatchOperationResult<FileInfo>>;
+
+  /**
+   * Batch download multiple files by CID with configurable concurrency
+   */
+  batchDownloadFiles(
+    cids: string[],
+    options?: BatchDownloadOptions,
+  ): Promise<BatchOperationResult<BatchDownloadFileResult>>;
 }

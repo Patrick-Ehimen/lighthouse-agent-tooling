@@ -4,6 +4,8 @@
 
 export { LighthouseUploadFileTool } from "./LighthouseUploadFileTool.js";
 export { LighthouseFetchFileTool } from "./LighthouseFetchFileTool.js";
+export { LighthouseBatchUploadTool } from "./LighthouseBatchUploadTool.js";
+export { LighthouseBatchDownloadTool } from "./LighthouseBatchDownloadTool.js";
 export { LighthouseCreateDatasetTool } from "./LighthouseCreateDatasetTool.js";
 export { LighthouseListDatasetsTool } from "./LighthouseListDatasetsTool.js";
 export { LighthouseGetDatasetTool } from "./LighthouseGetDatasetTool.js";
@@ -14,6 +16,8 @@ export * from "./types.js";
 
 import { LighthouseUploadFileTool } from "./LighthouseUploadFileTool.js";
 import { LighthouseFetchFileTool } from "./LighthouseFetchFileTool.js";
+import { LighthouseBatchUploadTool } from "./LighthouseBatchUploadTool.js";
+import { LighthouseBatchDownloadTool } from "./LighthouseBatchDownloadTool.js";
 import { LighthouseCreateDatasetTool } from "./LighthouseCreateDatasetTool.js";
 import { LighthouseListDatasetsTool } from "./LighthouseListDatasetsTool.js";
 import { LighthouseGetDatasetTool } from "./LighthouseGetDatasetTool.js";
@@ -29,6 +33,8 @@ export function getAllToolDefinitions(): MCPToolDefinition[] {
   return [
     LighthouseUploadFileTool.getDefinition(),
     LighthouseFetchFileTool.getDefinition(),
+    LighthouseBatchUploadTool.getDefinition(),
+    LighthouseBatchDownloadTool.getDefinition(),
     LighthouseCreateDatasetTool.getDefinition(),
     LighthouseListDatasetsTool.getDefinition(),
     LighthouseGetDatasetTool.getDefinition(),
@@ -44,6 +50,8 @@ export function getAllToolDefinitions(): MCPToolDefinition[] {
 export const ToolFactory = {
   LighthouseUploadFileTool,
   LighthouseFetchFileTool,
+  LighthouseBatchUploadTool,
+  LighthouseBatchDownloadTool,
   LighthouseCreateDatasetTool,
   LighthouseListDatasetsTool,
   LighthouseGetDatasetTool,

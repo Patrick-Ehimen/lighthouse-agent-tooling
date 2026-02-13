@@ -55,6 +55,14 @@ export type {
   ReturnValueTest,
   ChainType,
   DecryptionType,
+  // Batch operation types
+  BatchUploadOptions,
+  BatchDownloadOptions,
+  BatchUploadInput,
+  BatchDownloadInput,
+  BatchFileResult,
+  BatchOperationResult,
+  BatchDownloadFileResult,
 } from "./types";
 
 // Error handling types

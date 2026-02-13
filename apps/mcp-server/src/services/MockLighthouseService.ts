@@ -3,7 +3,14 @@
  */
 
 import { UploadResult, DownloadResult, AccessCondition, Dataset } from "@lighthouse-tooling/types";
-import { EnhancedAccessCondition } from "@lighthouse-tooling/sdk-wrapper";
+import {
+  EnhancedAccessCondition,
+  BatchUploadOptions,
+  BatchDownloadOptions,
+  BatchOperationResult,
+  BatchDownloadFileResult,
+  FileInfo,
+} from "@lighthouse-tooling/sdk-wrapper";
 import { Logger, FileUtils } from "@lighthouse-tooling/shared";
 import { CIDGenerator } from "../utils/cid-generator.js";
 import { ILighthouseService, StoredFile } from "./ILighthouseService.js";
@@ -596,6 +603,167 @@ export class MockLighthouseService implements ILighthouseService {
       this.logger.error("Dataset deletion failed", error as Error, { datasetId });
       throw error;
     }
+  }
+
+  /**
+   * Batch upload multiple files with configurable concurrency
+   */
+  async batchUploadFiles(
+    filePaths: string[],
+    options?: BatchUploadOptions,
+  ): Promise<BatchOperationResult<FileInfo>> {
+    const startTime = Date.now();
+    const results: Array<{
+      id: string;
+      success: boolean;
+      data?: FileInfo;
+      error?: string;
+      duration: number;
+      retries: number;
+    }> = [];
+
+    this.logger.info("Starting batch upload", {
+      fileCount: filePaths.length,
+      concurrency: options?.concurrency || 3,
+    });
+
+    for (const filePath of filePaths) {
+      const itemStartTime = Date.now();
+      try {
+        const uploadResult = await this.uploadFile({
+          filePath,
+          encrypt: options?.encrypt,
+          accessConditions: options?.accessConditions,
+          tags: options?.tags,
+        });
+
+        results.push({
+          id: filePath,
+          success: true,
+          data: {
+            hash: uploadResult.cid,
+            name: filePath.split("/").pop() || filePath,
+            size: uploadResult.size,
+            encrypted: uploadResult.encrypted,
+            mimeType: "application/octet-stream",
+            uploadedAt: uploadResult.uploadedAt,
+          },
+          duration: Date.now() - itemStartTime,
+          retries: 0,
+        });
+      } catch (error) {
+        if (!options?.continueOnError) {
+          throw error;
+        }
+        results.push({
+          id: filePath,
+          success: false,
+          error: error instanceof Error ? error.message : "Unknown error",
+          duration: Date.now() - itemStartTime,
+          retries: 0,
+        });
+      }
+    }
+
+    const successful = results.filter((r) => r.success).length;
+    const failed = results.filter((r) => !r.success).length;
+    const totalDuration = Date.now() - startTime;
+
+    this.logger.info("Batch upload completed", {
+      total: filePaths.length,
+      successful,
+      failed,
+      totalDuration,
+    });
+
+    return {
+      total: filePaths.length,
+      successful,
+      failed,
+      successRate: filePaths.length > 0 ? (successful / filePaths.length) * 100 : 0,
+      totalDuration,
+      averageDuration: results.length > 0 ? totalDuration / results.length : 0,
+      results,
+    };
+  }
+
+  /**
+   * Batch download multiple files by CID with configurable concurrency
+   */
+  async batchDownloadFiles(
+    cids: string[],
+    options?: BatchDownloadOptions,
+  ): Promise<BatchOperationResult<BatchDownloadFileResult>> {
+    const startTime = Date.now();
+    const results: Array<{
+      id: string;
+      success: boolean;
+      data?: BatchDownloadFileResult;
+      error?: string;
+      duration: number;
+      retries: number;
+    }> = [];
+
+    this.logger.info("Starting batch download", {
+      cidCount: cids.length,
+      concurrency: options?.concurrency || 3,
+    });
+
+    for (const cid of cids) {
+      const itemStartTime = Date.now();
+      try {
+        const downloadResult = await this.fetchFile({
+          cid,
+          outputPath: options?.outputDir ? `${options.outputDir}/${cid}` : undefined,
+          decrypt: options?.decrypt,
+        });
+
+        results.push({
+          id: cid,
+          success: true,
+          data: {
+            cid: downloadResult.cid,
+            filePath: downloadResult.filePath,
+            size: downloadResult.size,
+            decrypted: downloadResult.decrypted,
+          },
+          duration: Date.now() - itemStartTime,
+          retries: 0,
+        });
+      } catch (error) {
+        if (!options?.continueOnError) {
+          throw error;
+        }
+        results.push({
+          id: cid,
+          success: false,
+          error: error instanceof Error ? error.message : "Unknown error",
+          duration: Date.now() - itemStartTime,
+          retries: 0,
+        });
+      }
+    }
+
+    const successful = results.filter((r) => r.success).length;
+    const failed = results.filter((r) => !r.success).length;
+    const totalDuration = Date.now() - startTime;
+
+    this.logger.info("Batch download completed", {
+      total: cids.length,
+      successful,
+      failed,
+      totalDuration,
+    });
+
+    return {
+      total: cids.length,
+      successful,
+      failed,
+      successRate: cids.length > 0 ? (successful / cids.length) * 100 : 0,
+      totalDuration,
+      averageDuration: results.length > 0 ? totalDuration / results.length : 0,
+      results,
+    };
   }
 
   /**

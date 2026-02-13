@@ -61,6 +61,10 @@ export interface DownloadOptions {
   onProgress?: (progress: ProgressInfo) => void;
   /** Expected file size for progress calculation */
   expectedSize?: number;
+  /** Whether to decrypt the file after download (requires encryption keys) */
+  decrypt?: boolean;
+  /** Timeout in milliseconds (default: calculated based on expectedSize) */
+  timeout?: number;
 }
 
 /**
@@ -328,3 +332,123 @@ export interface EncryptionResponse {
  * Authentication token types
  */
 export type AuthToken = string;
+
+// ============================================
+// Batch Operation Types
+// ============================================
+
+/**
+ * Options for batch upload operations
+ */
+export interface BatchUploadOptions {
+  /** Maximum concurrent uploads (default: 3) */
+  concurrency?: number;
+  /** Enable encryption for all files */
+  encrypt?: boolean;
+  /** Access conditions for all files */
+  accessConditions?: AccessCondition[];
+  /** Tags for all files */
+  tags?: string[];
+  /** Metadata for all files */
+  metadata?: Record<string, any>;
+  /** Progress callback (completed, total, failures) */
+  onProgress?: (completed: number, total: number, failures: number) => void;
+  /** Whether to continue on individual file errors (default: true) */
+  continueOnError?: boolean;
+  /** Maximum retries per file (default: 3) */
+  maxRetries?: number;
+}
+
+/**
+ * Options for batch download operations
+ */
+export interface BatchDownloadOptions {
+  /** Maximum concurrent downloads (default: 3) */
+  concurrency?: number;
+  /** Output directory for downloaded files */
+  outputDir?: string;
+  /** Whether to decrypt files */
+  decrypt?: boolean;
+  /** Progress callback (completed, total, failures) */
+  onProgress?: (completed: number, total: number, failures: number) => void;
+  /** Whether to continue on individual file errors (default: true) */
+  continueOnError?: boolean;
+  /** Maximum retries per file (default: 3) */
+  maxRetries?: number;
+}
+
+/**
+ * Input for a single file in batch upload
+ */
+export interface BatchUploadInput {
+  /** File path to upload */
+  filePath: string;
+  /** Optional custom file name */
+  fileName?: string;
+  /** Optional file-specific metadata */
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Input for a single file in batch download
+ */
+export interface BatchDownloadInput {
+  /** CID of the file to download */
+  cid: string;
+  /** Optional custom output filename */
+  outputFileName?: string;
+  /** Expected file size for progress calculation */
+  expectedSize?: number;
+}
+
+/**
+ * Result of a single file operation in a batch
+ */
+export interface BatchFileResult<T = FileInfo> {
+  /** Unique identifier for this operation */
+  id: string;
+  /** Whether the operation succeeded */
+  success: boolean;
+  /** Result data if successful */
+  data?: T;
+  /** Error if failed */
+  error?: string;
+  /** Duration in milliseconds */
+  duration: number;
+  /** Number of retry attempts */
+  retries: number;
+}
+
+/**
+ * Result of a batch operation
+ */
+export interface BatchOperationResult<T = FileInfo> {
+  /** Total number of files processed */
+  total: number;
+  /** Number of successful operations */
+  successful: number;
+  /** Number of failed operations */
+  failed: number;
+  /** Individual results for each file */
+  results: BatchFileResult<T>[];
+  /** Total duration in milliseconds */
+  totalDuration: number;
+  /** Average duration per file in milliseconds */
+  averageDuration: number;
+  /** Success rate (0-1) */
+  successRate: number;
+}
+
+/**
+ * Download result for batch operations
+ */
+export interface BatchDownloadFileResult {
+  /** CID of the downloaded file */
+  cid: string;
+  /** Local file path where file was saved */
+  filePath: string;
+  /** File size in bytes */
+  size: number;
+  /** Whether file was decrypted */
+  decrypted: boolean;
+}

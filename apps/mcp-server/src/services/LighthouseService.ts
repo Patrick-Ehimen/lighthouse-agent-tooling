@@ -6,6 +6,13 @@ import {
   LighthouseAISDK,
   EnhancedAccessCondition,
   ConnectionPoolConfig,
+  BatchUploadOptions,
+  BatchDownloadOptions,
+  BatchOperationResult,
+  BatchDownloadFileResult,
+  BatchUploadInput,
+  BatchDownloadInput,
+  FileInfo,
 } from "@lighthouse-tooling/sdk-wrapper";
 import { UploadResult, DownloadResult, AccessCondition, Dataset } from "@lighthouse-tooling/types";
 import { Logger } from "@lighthouse-tooling/shared";
@@ -881,6 +888,107 @@ export class LighthouseService implements ILighthouseService {
       this.logger.info("Dataset deleted successfully", { datasetId });
     } catch (error) {
       this.logger.error("Dataset deletion failed", error as Error, { datasetId });
+      throw error;
+    }
+  }
+
+  /**
+   * Batch upload multiple files with configurable concurrency
+   */
+  async batchUploadFiles(
+    filePaths: string[],
+    options?: BatchUploadOptions,
+  ): Promise<BatchOperationResult<FileInfo>> {
+    const startTime = Date.now();
+
+    try {
+      this.logger.info("Starting batch upload", {
+        fileCount: filePaths.length,
+        concurrency: options?.concurrency || 3,
+      });
+
+      // Convert string paths to BatchUploadInput objects
+      const inputs: BatchUploadInput[] = filePaths.map((filePath) => ({
+        filePath,
+      }));
+
+      const result = await this.sdk.batchUpload(inputs, options);
+
+      // Store successful uploads in cache and database
+      for (const fileResult of result.results) {
+        if (fileResult.success && fileResult.data) {
+          const storedFile: StoredFile = {
+            cid: fileResult.data.hash,
+            filePath: fileResult.data.name,
+            size: fileResult.data.size,
+            encrypted: fileResult.data.encrypted,
+            accessConditions: options?.accessConditions,
+            tags: options?.tags,
+            uploadedAt: fileResult.data.uploadedAt,
+            pinned: true,
+            hash: fileResult.data.hash,
+          };
+
+          this.storage.saveFile(storedFile);
+          this.fileCache.set(fileResult.data.hash, storedFile);
+        }
+      }
+
+      const executionTime = Date.now() - startTime;
+      this.logger.info("Batch upload completed", {
+        total: result.total,
+        successful: result.successful,
+        failed: result.failed,
+        successRate: result.successRate,
+        executionTime,
+      });
+
+      return result;
+    } catch (error) {
+      this.logger.error("Batch upload failed", error as Error, {
+        fileCount: filePaths.length,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Batch download multiple files by CID with configurable concurrency
+   */
+  async batchDownloadFiles(
+    cids: string[],
+    options?: BatchDownloadOptions,
+  ): Promise<BatchOperationResult<BatchDownloadFileResult>> {
+    const startTime = Date.now();
+
+    try {
+      this.logger.info("Starting batch download", {
+        cidCount: cids.length,
+        concurrency: options?.concurrency || 3,
+        outputDir: options?.outputDir,
+      });
+
+      // Convert string CIDs to BatchDownloadInput objects
+      const inputs: BatchDownloadInput[] = cids.map((cid) => ({
+        cid,
+      }));
+
+      const result = await this.sdk.batchDownload(inputs, options);
+
+      const executionTime = Date.now() - startTime;
+      this.logger.info("Batch download completed", {
+        total: result.total,
+        successful: result.successful,
+        failed: result.failed,
+        successRate: result.successRate,
+        executionTime,
+      });
+
+      return result;
+    } catch (error) {
+      this.logger.error("Batch download failed", error as Error, {
+        cidCount: cids.length,
+      });
       throw error;
     }
   }

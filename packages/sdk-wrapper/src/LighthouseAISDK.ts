@@ -1,7 +1,8 @@
 import { EventEmitter } from "eventemitter3";
 import lighthouse from "@lighthouse-web3/sdk";
-import { readFileSync } from "fs";
-import { AxiosRequestConfig, AxiosResponse } from "axios";
+import { readFileSync, createWriteStream, promises as fsPromises } from "fs";
+import { dirname } from "path";
+import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 import { AuthenticationManager } from "./auth/AuthenticationManager";
 import { ProgressTracker } from "./progress/ProgressTracker";
 import { ErrorHandler } from "./errors/ErrorHandler";
@@ -26,8 +27,17 @@ import {
   EncryptionResponse,
   AuthToken,
   EnhancedAccessCondition,
+  BatchUploadOptions,
+  BatchDownloadOptions,
+  BatchUploadInput,
+  BatchDownloadInput,
+  BatchFileResult,
+  BatchOperationResult,
+  BatchDownloadFileResult,
 } from "./types";
 import { generateOperationId, validateFile, createFileInfo } from "./utils/helpers";
+import { BatchProcessor } from "./batch/BatchProcessor";
+import { MemoryManager } from "./memory/MemoryManager";
 
 /**
  * Unified SDK wrapper that abstracts Lighthouse and Kavach SDK complexity for AI agents.
@@ -70,6 +80,7 @@ export class LighthouseAISDK extends EventEmitter {
   private encryption: EncryptionManager;
   private rateLimiter: RateLimiter;
   private connectionPool: ConnectionPool | null;
+  private memoryManager: MemoryManager;
   private config: LighthouseConfig;
 
   constructor(config: LighthouseConfig) {
@@ -84,6 +95,13 @@ export class LighthouseAISDK extends EventEmitter {
     this.circuitBreaker = new CircuitBreaker();
     this.encryption = new EncryptionManager();
     this.rateLimiter = new RateLimiter(10, 1, 1000); // 10 requests per second
+    this.memoryManager = new MemoryManager({
+      maxMemory: 512 * 1024 * 1024, // 512MB
+      backpressureThreshold: 0.8,
+      cleanupThreshold: 0.9,
+      checkInterval: 5000,
+      autoCleanup: true,
+    });
 
     // Initialize connection pool (unless explicitly disabled)
     if (config.pool === false) {
@@ -153,6 +171,15 @@ export class LighthouseAISDK extends EventEmitter {
       this.connectionPool.on("release", (event) => this.emit("pool:release", event));
       this.connectionPool.on("cleanup", (event) => this.emit("pool:cleanup", event));
     }
+
+    // Forward memory manager events
+    this.memoryManager.on("backpressure:start", (event) =>
+      this.emit("memory:backpressure:start", event),
+    );
+    this.memoryManager.on("backpressure:end", (event) =>
+      this.emit("memory:backpressure:end", event),
+    );
+    this.memoryManager.on("cleanup:needed", (event) => this.emit("memory:cleanup:needed", event));
   }
 
   /**
@@ -451,28 +478,152 @@ Maximum file size may be exceeded. Try uploading a smaller file.`);
     return this.executeWithRateLimit(async () => {
       return this.errorHandler.executeWithRetry(async () => {
         try {
+          // Validate CID format
+          if (!cid || typeof cid !== "string") {
+            throw new Error("Invalid CID: CID is required and must be a string");
+          }
+
+          // Basic CID validation (CIDv0 starts with Qm, CIDv1 starts with b)
+          const isValidCID =
+            cid.startsWith("Qm") || cid.startsWith("baf") || cid.startsWith("bafy");
+          if (!isValidCID && !cid.startsWith("test_")) {
+            throw new Error(`Invalid CID format: ${cid}. Expected CIDv0 (Qm...) or CIDv1 (baf...)`);
+          }
+
+          // TODO: Decryption support requires Kavach SDK integration
+          if (options.decrypt) {
+            throw new Error(
+              "Decryption during download is not yet implemented. " +
+                "Download the file first, then use the encryption manager to decrypt.",
+            );
+          }
+
+          // Ensure output directory exists
+          const outputDir = dirname(outputPath);
+          try {
+            await fsPromises.mkdir(outputDir, { recursive: true });
+          } catch (mkdirError) {
+            // Directory might already exist, that's fine
+          }
+
           // Start progress tracking
           this.progress.startOperation(operationId, "download", options.expectedSize);
+          this.progress.updateProgress(operationId, 0, "preparing");
+
+          // Lighthouse IPFS gateway URL
+          const gatewayUrl = `https://gateway.lighthouse.storage/ipfs/${cid}`;
+
+          // Calculate timeout based on expected size (minimum 2 minutes, +30s per 10MB)
+          // User-provided timeout takes precedence
+          const expectedSizeMB = (options.expectedSize || 10 * 1024 * 1024) / (1024 * 1024);
+          const dynamicTimeout =
+            options.timeout ?? Math.max(120000, 120000 + (expectedSizeMB / 10) * 30000);
 
           // Update progress to downloading phase
           this.progress.updateProgress(operationId, 0, "downloading");
 
-          // Create progress callback
-          const progressCallback = this.progress.createProgressCallback(operationId);
+          // Download with progress tracking
+          const response = await axios({
+            method: "GET",
+            url: gatewayUrl,
+            responseType: "stream",
+            timeout: dynamicTimeout,
+            headers: {
+              "User-Agent": "LighthouseAISDK/1.0",
+            },
+            onDownloadProgress: (progressEvent) => {
+              const loaded = progressEvent.loaded;
+              const total = progressEvent.total || options.expectedSize;
+              if (total) {
+                const percentage = Math.round((loaded / total) * 100);
+                this.progress.updateProgress(operationId, percentage, "downloading");
 
-          // Download file using Lighthouse SDK - use getFileInfo for now
-          const downloadResponse = await lighthouse.getFileInfo(cid);
+                // Call user's progress callback if provided
+                if (options.onProgress) {
+                  const rate = this.progress.getProgress(operationId)?.rate || 0;
+                  options.onProgress({
+                    loaded,
+                    total,
+                    percentage,
+                    rate,
+                    phase: "downloading",
+                  });
+                }
+              }
+            },
+          });
 
-          if (!downloadResponse) {
-            throw new Error("Download failed - no response from Lighthouse");
+          // Check response status
+          if (response.status !== 200) {
+            if (response.status === 404) {
+              throw new Error(`File not found: CID ${cid} does not exist on the network`);
+            }
+            throw new Error(
+              `Download failed with status ${response.status}: ${response.statusText}`,
+            );
+          }
+
+          // Create write stream and pipe response
+          const writer = createWriteStream(outputPath);
+
+          await new Promise<void>((resolve, reject) => {
+            response.data.pipe(writer);
+
+            writer.on("finish", () => {
+              resolve();
+            });
+
+            writer.on("error", (err) => {
+              // Clean up partial file on error
+              fsPromises.unlink(outputPath).catch(() => {});
+              reject(new Error(`Failed to write file: ${err.message}`));
+            });
+
+            response.data.on("error", (err: Error) => {
+              writer.close();
+              fsPromises.unlink(outputPath).catch(() => {});
+              reject(new Error(`Download stream error: ${err.message}`));
+            });
+          });
+
+          // Verify file was written
+          const stats = await fsPromises.stat(outputPath);
+          if (stats.size === 0) {
+            await fsPromises.unlink(outputPath);
+            throw new Error("Downloaded file is empty");
           }
 
           // Complete operation
-          this.progress.completeOperation(operationId, { filePath: outputPath });
+          this.progress.completeOperation(operationId, {
+            filePath: outputPath,
+            size: stats.size,
+            cid,
+          });
 
           return outputPath;
         } catch (error) {
           this.progress.failOperation(operationId, error as Error);
+
+          // Provide more helpful error messages
+          const errorMessage = error instanceof Error ? error.message : String(error);
+
+          if (
+            errorMessage.includes("ENOTFOUND") ||
+            errorMessage.includes("ECONNREFUSED") ||
+            errorMessage.includes("ETIMEDOUT")
+          ) {
+            throw new Error(`Network error downloading file: ${errorMessage}.
+Check your internet connection and try again.`);
+          }
+
+          if (errorMessage.includes("404") || errorMessage.includes("not found")) {
+            throw new Error(`File not found: CID ${cid} does not exist or is not accessible.`);
+          }
+
+          if (errorMessage.includes("EACCES") || errorMessage.includes("permission")) {
+            throw new Error(`Permission denied: Cannot write to ${outputPath}`);
+          }
+
           throw error;
         }
       }, "download");
@@ -938,7 +1089,7 @@ Maximum file size may be exceeded. Try uploading a smaller file.`);
           this.progress.updateProgress(operationId, 80, "processing");
 
           // Create dataset metadata
-          const datasetId = `dataset_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          const datasetId = `dataset_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
           const now = new Date();
 
           const datasetInfo: DatasetInfo = {
@@ -1180,6 +1331,361 @@ Maximum file size may be exceeded. Try uploading a smaller file.`);
     }, "deleteDataset");
   }
 
+  // ============================================
+  // Batch Operations
+  // ============================================
+
+  /**
+   * Upload multiple files in batch with concurrency control and progress tracking.
+   *
+   * This method efficiently uploads multiple files with configurable concurrency,
+   * automatic retry logic, and backpressure handling to prevent memory exhaustion.
+   *
+   * @param files - Array of files to upload
+   * @param options - Batch upload configuration options
+   * @returns Promise resolving to batch operation results
+   *
+   * @example
+   * ```typescript
+   * const result = await sdk.batchUpload(
+   *   [
+   *     { filePath: './file1.pdf' },
+   *     { filePath: './file2.json', fileName: 'data.json' },
+   *     { filePath: './file3.txt', metadata: { type: 'text' } }
+   *   ],
+   *   {
+   *     concurrency: 3,
+   *     encrypt: true,
+   *     onProgress: (completed, total, failures) => {
+   *       console.log(`Progress: ${completed}/${total} (${failures} failures)`);
+   *     }
+   *   }
+   * );
+   *
+   * console.log(`Uploaded ${result.successful}/${result.total} files`);
+   * ```
+   */
+  async batchUpload(
+    files: BatchUploadInput[],
+    options: BatchUploadOptions = {},
+  ): Promise<BatchOperationResult<FileInfo>> {
+    const operationId = generateOperationId();
+    const startTime = Date.now();
+    const concurrency = options.concurrency ?? 3;
+    const continueOnError = options.continueOnError ?? true;
+    const maxRetries = options.maxRetries ?? 3;
+
+    // Emit batch start event
+    this.emit("batch:upload:start", {
+      operationId,
+      totalFiles: files.length,
+      concurrency,
+    });
+
+    // Track completed and failed counts
+    let completedCount = 0;
+    let failedCount = 0;
+
+    // Create batch processor for uploads
+    const processor = new BatchProcessor<BatchUploadInput, FileInfo>(
+      async (input: BatchUploadInput) => {
+        // Check for memory backpressure before each upload
+        if (this.memoryManager.isUnderBackpressure()) {
+          this.emit("batch:backpressure", { operationId, waiting: true });
+          await this.memoryManager.waitForRelief(30000); // Wait up to 30 seconds
+          this.emit("batch:backpressure", { operationId, waiting: false });
+        }
+
+        // Get file size for memory tracking
+        const fileStats = await validateFile(input.filePath);
+        const memoryId = `upload_${operationId}_${input.filePath}`;
+
+        // Track memory allocation
+        this.memoryManager.track(memoryId, fileStats.size, {
+          type: "upload",
+          filePath: input.filePath,
+        });
+
+        try {
+          // Upload the file
+          const result = await this.uploadFile(input.filePath, {
+            fileName: input.fileName,
+            encrypt: options.encrypt,
+            accessConditions: options.accessConditions,
+            metadata: { ...options.metadata, ...input.metadata },
+          });
+
+          return result;
+        } finally {
+          // Release memory tracking
+          this.memoryManager.untrack(memoryId);
+        }
+      },
+      {
+        concurrency,
+        retryOnFailure: continueOnError,
+        maxRetries,
+        onProgress: (completed, total) => {
+          completedCount = completed;
+          failedCount = total - completed;
+
+          // Emit progress event
+          this.emit("batch:upload:progress", {
+            operationId,
+            completed: completedCount,
+            total: files.length,
+            failures: failedCount,
+          });
+
+          // Call user progress callback
+          if (options.onProgress) {
+            options.onProgress(completedCount, files.length, failedCount);
+          }
+        },
+      },
+    );
+
+    try {
+      // Create operations from input files
+      const operations = files.map((file, index) => ({
+        id: `upload_${index}_${file.filePath}`,
+        data: file,
+      }));
+
+      // Process all uploads
+      const batchResults = await processor.addBatch(operations);
+
+      // Convert batch results to our format
+      const results: BatchFileResult<FileInfo>[] = batchResults.map((br) => ({
+        id: br.id,
+        success: br.success,
+        data: br.result,
+        error: br.error?.message,
+        duration: br.duration,
+        retries: br.retries,
+      }));
+
+      const totalDuration = Date.now() - startTime;
+      const successful = results.filter((r) => r.success).length;
+      const failed = results.filter((r) => !r.success).length;
+
+      const operationResult: BatchOperationResult<FileInfo> = {
+        total: files.length,
+        successful,
+        failed,
+        results,
+        totalDuration,
+        averageDuration: totalDuration / files.length,
+        successRate: files.length > 0 ? successful / files.length : 0,
+      };
+
+      // Emit batch complete event
+      this.emit("batch:upload:complete", {
+        operationId,
+        ...operationResult,
+      });
+
+      return operationResult;
+    } catch (error) {
+      // Emit batch error event
+      this.emit("batch:upload:error", {
+        operationId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    } finally {
+      processor.destroy();
+    }
+  }
+
+  /**
+   * Download multiple files in batch with concurrency control and progress tracking.
+   *
+   * This method efficiently downloads multiple files with configurable concurrency,
+   * automatic retry logic, and backpressure handling to prevent memory exhaustion.
+   *
+   * @param files - Array of files to download (by CID)
+   * @param options - Batch download configuration options
+   * @returns Promise resolving to batch operation results
+   *
+   * @example
+   * ```typescript
+   * const result = await sdk.batchDownload(
+   *   [
+   *     { cid: 'QmHash1...' },
+   *     { cid: 'QmHash2...', outputFileName: 'custom-name.pdf' },
+   *     { cid: 'QmHash3...', expectedSize: 1024 * 1024 }
+   *   ],
+   *   {
+   *     concurrency: 3,
+   *     outputDir: './downloads',
+   *     onProgress: (completed, total, failures) => {
+   *       console.log(`Progress: ${completed}/${total} (${failures} failures)`);
+   *     }
+   *   }
+   * );
+   *
+   * console.log(`Downloaded ${result.successful}/${result.total} files`);
+   * ```
+   */
+  async batchDownload(
+    files: BatchDownloadInput[],
+    options: BatchDownloadOptions = {},
+  ): Promise<BatchOperationResult<BatchDownloadFileResult>> {
+    const operationId = generateOperationId();
+    const startTime = Date.now();
+    const concurrency = options.concurrency ?? 3;
+    const continueOnError = options.continueOnError ?? true;
+    const maxRetries = options.maxRetries ?? 3;
+    const outputDir = options.outputDir ?? "./downloads";
+
+    // Emit batch start event
+    this.emit("batch:download:start", {
+      operationId,
+      totalFiles: files.length,
+      concurrency,
+      outputDir,
+    });
+
+    // Track completed and failed counts
+    let completedCount = 0;
+    let failedCount = 0;
+
+    // Create batch processor for downloads
+    const processor = new BatchProcessor<BatchDownloadInput, BatchDownloadFileResult>(
+      async (input: BatchDownloadInput) => {
+        // Check for memory backpressure before each download
+        if (this.memoryManager.isUnderBackpressure()) {
+          this.emit("batch:backpressure", { operationId, waiting: true });
+          await this.memoryManager.waitForRelief(30000); // Wait up to 30 seconds
+          this.emit("batch:backpressure", { operationId, waiting: false });
+        }
+
+        // Track expected memory allocation
+        const expectedSize = input.expectedSize ?? 10 * 1024 * 1024; // Default 10MB
+        const memoryId = `download_${operationId}_${input.cid}`;
+
+        this.memoryManager.track(memoryId, expectedSize, {
+          type: "download",
+          cid: input.cid,
+        });
+
+        try {
+          // Determine output path
+          const fileName = input.outputFileName ?? `downloaded_${input.cid}`;
+          const outputPath = `${outputDir}/${fileName}`;
+
+          // Download the file
+          const filePath = await this.downloadFile(input.cid, outputPath, {
+            expectedSize: input.expectedSize,
+            decrypt: options.decrypt,
+          });
+
+          // Get actual file size
+          const fileStats = await fsPromises.stat(filePath);
+
+          return {
+            cid: input.cid,
+            filePath,
+            size: fileStats.size,
+            decrypted: options.decrypt ?? false,
+          };
+        } finally {
+          // Release memory tracking
+          this.memoryManager.untrack(memoryId);
+        }
+      },
+      {
+        concurrency,
+        retryOnFailure: continueOnError,
+        maxRetries,
+        onProgress: (completed, total) => {
+          completedCount = completed;
+          failedCount = total - completed;
+
+          // Emit progress event
+          this.emit("batch:download:progress", {
+            operationId,
+            completed: completedCount,
+            total: files.length,
+            failures: failedCount,
+          });
+
+          // Call user progress callback
+          if (options.onProgress) {
+            options.onProgress(completedCount, files.length, failedCount);
+          }
+        },
+      },
+    );
+
+    try {
+      // Create operations from input files
+      const operations = files.map((file, index) => ({
+        id: `download_${index}_${file.cid}`,
+        data: file,
+      }));
+
+      // Process all downloads
+      const batchResults = await processor.addBatch(operations);
+
+      // Convert batch results to our format
+      const results: BatchFileResult<BatchDownloadFileResult>[] = batchResults.map((br) => ({
+        id: br.id,
+        success: br.success,
+        data: br.result,
+        error: br.error?.message,
+        duration: br.duration,
+        retries: br.retries,
+      }));
+
+      const totalDuration = Date.now() - startTime;
+      const successful = results.filter((r) => r.success).length;
+      const failed = results.filter((r) => !r.success).length;
+
+      const operationResult: BatchOperationResult<BatchDownloadFileResult> = {
+        total: files.length,
+        successful,
+        failed,
+        results,
+        totalDuration,
+        averageDuration: totalDuration / files.length,
+        successRate: files.length > 0 ? successful / files.length : 0,
+      };
+
+      // Emit batch complete event
+      this.emit("batch:download:complete", {
+        operationId,
+        ...operationResult,
+      });
+
+      return operationResult;
+    } catch (error) {
+      // Emit batch error event
+      this.emit("batch:download:error", {
+        operationId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    } finally {
+      processor.destroy();
+    }
+  }
+
+  /**
+   * Get memory manager statistics
+   */
+  getMemoryStats() {
+    return this.memoryManager.getStats();
+  }
+
+  /**
+   * Check if currently under memory backpressure
+   */
+  isUnderBackpressure(): boolean {
+    return this.memoryManager.isUnderBackpressure();
+  }
+
   /**
    * Cleanup resources and disconnect
    */
@@ -1190,6 +1696,7 @@ Maximum file size may be exceeded. Try uploading a smaller file.`);
     if (this.connectionPool) {
       this.connectionPool.destroy();
     }
+    this.memoryManager.destroy();
     this.removeAllListeners();
   }
 }

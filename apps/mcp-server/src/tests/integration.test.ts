@@ -64,7 +64,28 @@ describe("Lighthouse MCP Server Integration", () => {
 
   it("should handle missing API key", () => {
     expect(() => {
-      new LighthouseMCPServer({ lighthouseApiKey: undefined });
-    }).toThrow("LIGHTHOUSE_API_KEY environment variable is required");
+      new LighthouseMCPServer({
+        lighthouseApiKey: undefined,
+        authentication: {
+          defaultApiKey: undefined,
+          enablePerRequestAuth: true,
+          requireAuthentication: true,
+          keyValidationCache: {
+            enabled: false,
+            maxSize: 0,
+            ttlSeconds: 0,
+            cleanupIntervalSeconds: 0,
+          },
+          rateLimiting: {
+            enabled: false,
+            requestsPerMinute: 0,
+            burstLimit: 0,
+            keyBasedLimiting: false,
+          },
+        },
+      });
+    }).toThrow(
+      "LIGHTHOUSE_API_KEY environment variable or authentication.defaultApiKey is required",
+    );
   });
 });
