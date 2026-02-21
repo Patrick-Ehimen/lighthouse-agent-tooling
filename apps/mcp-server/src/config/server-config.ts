@@ -96,6 +96,7 @@ export const DEFAULT_HEALTH_CHECK_CONFIG: HealthCheckConfig = {
   lighthouseApiUrl: process.env.LIGHTHOUSE_API_URL || "https://api.lighthouse.storage",
   connectivityCheckInterval: 30000,
   connectivityTimeout: 5000,
+  metricsEnabled: process.env.PROMETHEUS_METRICS_ENABLED !== "false", // Enabled by default
 };
 
 export const DEFAULT_ORGANIZATION_SETTINGS: OrganizationSettings = {

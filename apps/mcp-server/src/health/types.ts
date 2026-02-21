@@ -8,6 +8,8 @@ export interface HealthCheckConfig {
   lighthouseApiUrl?: string;
   connectivityCheckInterval?: number;
   connectivityTimeout?: number;
+  /** Enable Prometheus metrics endpoint at /metrics */
+  metricsEnabled?: boolean;
 }
 
 export interface HealthStatus {

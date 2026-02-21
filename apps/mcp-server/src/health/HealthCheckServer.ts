@@ -1,7 +1,7 @@
 /**
  * Health Check HTTP Server
  *
- * Provides /health (liveness) and /ready (readiness) endpoints
+ * Provides /health (liveness), /ready (readiness), and /metrics (Prometheus) endpoints
  * on a configurable port, separate from the MCP stdio transport.
  */
 
@@ -14,6 +14,7 @@ import { ILighthouseService } from "../services/ILighthouseService.js";
 import { ToolRegistry } from "../registry/ToolRegistry.js";
 import { ServerConfig } from "../config/server-config.js";
 import { HealthCheckConfig, HealthStatus, ReadinessCheck, ReadinessStatus } from "./types.js";
+import { PrometheusExporter } from "./PrometheusExporter.js";
 
 export interface HealthCheckDependencies {
   authManager: AuthManager;
@@ -30,6 +31,7 @@ export class HealthCheckServer {
   private deps: HealthCheckDependencies;
   private healthConfig: HealthCheckConfig;
   private logger: Logger;
+  private prometheusExporter: PrometheusExporter | null = null;
 
   private lastConnectivityCheck: {
     up: boolean;
@@ -41,6 +43,16 @@ export class HealthCheckServer {
     this.deps = deps;
     this.healthConfig = healthConfig;
     this.logger = deps.logger;
+
+    // Initialize Prometheus exporter if metrics are enabled
+    if (healthConfig.metricsEnabled !== false) {
+      this.prometheusExporter = new PrometheusExporter({
+        metricsCollector: deps.authManager.getMetricsCollector(),
+        registry: deps.registry,
+        serviceFactory: deps.serviceFactory,
+        lighthouseService: deps.lighthouseService,
+      });
+    }
   }
 
   async start(): Promise<void> {
@@ -109,6 +121,12 @@ export class HealthCheckServer {
           this.sendJSON(res, 500, { error: "Internal server error" });
         });
         break;
+      case "/metrics":
+        this.handleMetrics(res).catch((err) => {
+          this.logger.error("Metrics export failed", err);
+          this.sendJSON(res, 500, { error: "Internal server error" });
+        });
+        break;
       default:
         this.sendJSON(res, 404, { error: "Not found" });
         break;
@@ -152,6 +170,27 @@ export class HealthCheckServer {
     };
 
     this.sendJSON(res, allUp ? 200 : 503, status);
+  }
+
+  private async handleMetrics(res: http.ServerResponse): Promise<void> {
+    if (!this.prometheusExporter) {
+      this.sendJSON(res, 404, { error: "Metrics endpoint not enabled" });
+      return;
+    }
+
+    try {
+      const metrics = await this.prometheusExporter.getMetrics();
+      const contentType = this.prometheusExporter.getContentType();
+
+      res.writeHead(200, {
+        "Content-Type": contentType,
+        "Cache-Control": "no-cache, no-store",
+      });
+      res.end(metrics);
+    } catch (err) {
+      this.logger.error("Failed to generate metrics", err as Error);
+      this.sendJSON(res, 500, { error: "Failed to generate metrics" });
+    }
   }
 
   private checkSDK(): ReadinessCheck {

@@ -167,6 +167,139 @@ The server meets the following performance requirements:
 - **Mock Operations**: < 500ms per operation
 - **Memory Usage**: < 50MB
 
+## 📈 Prometheus Metrics Endpoint
+
+The server exposes a `/metrics` endpoint in Prometheus text format for integration with monitoring stacks like Prometheus, Grafana, and Datadog.
+
+### Enabling Metrics
+
+The metrics endpoint is enabled by default when the health check server is running. To configure:
+
+```bash
+# Enable health check server (required for /metrics)
+HEALTH_CHECK_ENABLED=true
+
+# Optionally set a custom port (default: 8080)
+HEALTH_CHECK_PORT=8080
+
+# Disable Prometheus metrics (metrics enabled by default)
+PROMETHEUS_METRICS_ENABLED=false
+```
+
+### Available Metrics
+
+#### Authentication Metrics
+
+| Metric                             | Type      | Description                                                          |
+| ---------------------------------- | --------- | -------------------------------------------------------------------- |
+| `lighthouse_auth_total{status}`    | Counter   | Total authentication attempts by status (success, failure, fallback) |
+| `lighthouse_auth_duration_seconds` | Histogram | Authentication duration distribution                                 |
+| `lighthouse_unique_api_keys`       | Gauge     | Number of unique API keys seen                                       |
+
+#### Cache Metrics
+
+| Metric                          | Type    | Description                  |
+| ------------------------------- | ------- | ---------------------------- |
+| `lighthouse_cache_hits_total`   | Counter | Total cache hits             |
+| `lighthouse_cache_misses_total` | Counter | Total cache misses           |
+| `lighthouse_cache_size`         | Gauge   | Current cache size (entries) |
+| `lighthouse_cache_max_size`     | Gauge   | Maximum cache capacity       |
+
+#### Tool Metrics
+
+| Metric                                           | Type      | Description                         |
+| ------------------------------------------------ | --------- | ----------------------------------- |
+| `lighthouse_tool_calls_total{tool}`              | Counter   | Total tool invocations by tool name |
+| `lighthouse_tools_registered`                    | Gauge     | Number of registered tools          |
+| `lighthouse_request_duration_seconds{operation}` | Histogram | Request duration by operation       |
+
+#### Security Metrics
+
+| Metric                                   | Type    | Description                                                                 |
+| ---------------------------------------- | ------- | --------------------------------------------------------------------------- |
+| `lighthouse_security_events_total{type}` | Counter | Security events by type (AUTHENTICATION_FAILURE, RATE_LIMIT_EXCEEDED, etc.) |
+
+#### Storage Metrics
+
+| Metric                           | Type  | Description                     |
+| -------------------------------- | ----- | ------------------------------- |
+| `lighthouse_storage_files`       | Gauge | Number of files in storage      |
+| `lighthouse_storage_bytes`       | Gauge | Total storage usage in bytes    |
+| `lighthouse_storage_max_bytes`   | Gauge | Maximum storage capacity        |
+| `lighthouse_storage_utilization` | Gauge | Storage utilization ratio (0-1) |
+
+#### Service Pool Metrics
+
+| Metric                             | Type  | Description                   |
+| ---------------------------------- | ----- | ----------------------------- |
+| `lighthouse_service_pool_size`     | Gauge | Current service pool size     |
+| `lighthouse_service_pool_max_size` | Gauge | Maximum service pool capacity |
+
+#### Process Metrics (Auto-collected)
+
+| Metric                                     | Type    | Description             |
+| ------------------------------------------ | ------- | ----------------------- |
+| `lighthouse_process_cpu_seconds_total`     | Counter | Total CPU time consumed |
+| `lighthouse_process_resident_memory_bytes` | Gauge   | Resident memory size    |
+| `lighthouse_nodejs_eventloop_lag_seconds`  | Gauge   | Node.js event loop lag  |
+| `lighthouse_nodejs_heap_size_total_bytes`  | Gauge   | Total heap size         |
+| `lighthouse_nodejs_heap_size_used_bytes`   | Gauge   | Used heap size          |
+
+### Example Output
+
+```prometheus
+# HELP lighthouse_auth_total Total authentication attempts
+# TYPE lighthouse_auth_total counter
+lighthouse_auth_total{status="success"} 1542
+lighthouse_auth_total{status="failure"} 23
+lighthouse_auth_total{status="fallback"} 156
+
+# HELP lighthouse_cache_hits_total Total cache hits
+# TYPE lighthouse_cache_hits_total counter
+lighthouse_cache_hits_total 12453
+
+# HELP lighthouse_cache_misses_total Total cache misses
+# TYPE lighthouse_cache_misses_total counter
+lighthouse_cache_misses_total 1847
+
+# HELP lighthouse_request_duration_seconds Request duration in seconds
+# TYPE lighthouse_request_duration_seconds histogram
+lighthouse_request_duration_seconds_bucket{operation="lighthouse_upload_file",le="0.1"} 234
+lighthouse_request_duration_seconds_bucket{operation="lighthouse_upload_file",le="0.5"} 892
+lighthouse_request_duration_seconds_bucket{operation="lighthouse_upload_file",le="1"} 1023
+lighthouse_request_duration_seconds_bucket{operation="lighthouse_upload_file",le="+Inf"} 1024
+lighthouse_request_duration_seconds_sum{operation="lighthouse_upload_file"} 342.87
+lighthouse_request_duration_seconds_count{operation="lighthouse_upload_file"} 1024
+
+# HELP lighthouse_security_events_total Total security events by type
+# TYPE lighthouse_security_events_total counter
+lighthouse_security_events_total{type="AUTHENTICATION_FAILURE"} 23
+lighthouse_security_events_total{type="RATE_LIMIT_EXCEEDED"} 5
+```
+
+### Prometheus Configuration
+
+Add this scrape configuration to your `prometheus.yml`:
+
+```yaml
+scrape_configs:
+  - job_name: "lighthouse-mcp-server"
+    static_configs:
+      - targets: ["localhost:8080"]
+    metrics_path: /metrics
+    scrape_interval: 15s
+```
+
+### Grafana Dashboard
+
+Import the metrics into Grafana and create dashboards to visualize:
+
+- Authentication success/failure rates
+- Cache hit rate over time
+- Tool usage patterns
+- Storage utilization trends
+- Security event alerts
+
 ## 🧪 Testing
 
 ```bash

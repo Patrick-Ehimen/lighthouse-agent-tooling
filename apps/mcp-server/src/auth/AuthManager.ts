@@ -6,16 +6,19 @@ import { AuthConfig, ValidationResult, AuthenticationResult } from "./types.js";
 import { KeyValidationCache } from "./KeyValidationCache.js";
 import { RateLimiter } from "./RateLimiter.js";
 import { SecureKeyHandler } from "./SecureKeyHandler.js";
+import { MetricsCollector } from "./MetricsCollector.js";
 
 export class AuthManager {
   private config: AuthConfig;
   private cache: KeyValidationCache;
   private rateLimiter: RateLimiter;
+  private metricsCollector: MetricsCollector;
 
   constructor(config: AuthConfig) {
     this.config = config;
     this.cache = new KeyValidationCache(config.keyValidationCache);
     this.rateLimiter = new RateLimiter(config.rateLimiting);
+    this.metricsCollector = new MetricsCollector();
   }
 
   /**
@@ -38,8 +41,10 @@ export class AuthManager {
     // Check cache first
     const cached = this.cache.get(keyHash);
     if (cached) {
+      this.metricsCollector.recordCacheAccess(true);
       return cached;
     }
+    this.metricsCollector.recordCacheAccess(false);
 
     // Check rate limiting
     const rateLimitResult = this.rateLimiter.isAllowed(keyHash);
@@ -115,7 +120,7 @@ export class AuthManager {
 
       const validation = await this.validateApiKey(effectiveKey);
 
-      return {
+      const result: AuthenticationResult = {
         success: validation.isValid,
         keyHash: validation.keyHash,
         usedFallback,
@@ -123,8 +128,13 @@ export class AuthManager {
         authTime: Date.now() - startTime,
         errorMessage: validation.errorMessage,
       };
+
+      // Record metrics
+      this.metricsCollector.recordAuthentication(result);
+
+      return result;
     } catch (error) {
-      return {
+      const result: AuthenticationResult = {
         success: false,
         keyHash: "unknown",
         usedFallback: false,
@@ -132,6 +142,11 @@ export class AuthManager {
         authTime: Date.now() - startTime,
         errorMessage: error instanceof Error ? error.message : "Authentication failed",
       };
+
+      // Record failed authentication
+      this.metricsCollector.recordAuthentication(result);
+
+      return result;
     }
   }
 
@@ -164,6 +179,13 @@ export class AuthManager {
    */
   getCacheStats() {
     return this.cache.getStats();
+  }
+
+  /**
+   * Get metrics collector for Prometheus export
+   */
+  getMetricsCollector(): MetricsCollector {
+    return this.metricsCollector;
   }
 
   /**
@@ -204,5 +226,6 @@ export class AuthManager {
   destroy(): void {
     this.cache.destroy();
     this.rateLimiter.destroy();
+    this.metricsCollector.destroy();
   }
 }

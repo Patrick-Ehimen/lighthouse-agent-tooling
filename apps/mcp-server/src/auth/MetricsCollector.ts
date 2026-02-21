@@ -216,6 +216,16 @@ export class MetricsCollector {
   }
 
   /**
+   * Get raw cache counters for Prometheus export
+   */
+  getCacheCounters(): { hits: number; misses: number } {
+    return {
+      hits: this.cacheHits,
+      misses: this.cacheMisses,
+    };
+  }
+
+  /**
    * Get security events within time range
    */
   getSecurityEvents(since?: Date): SecurityEvent[] {
