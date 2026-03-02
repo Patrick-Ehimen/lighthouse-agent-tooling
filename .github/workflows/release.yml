@@ -69,7 +69,7 @@ jobs:
         working-directory: packages/vscode-extension
 
       - name: Upload VSCode extension artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: vscode-extension
           path: packages/vscode-extension/*.vsix
@@ -100,7 +100,7 @@ jobs:
         working-directory: packages/cursor-extension
 
       - name: Upload Cursor extension artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: cursor-extension
           path: packages/cursor-extension/*.vsix
