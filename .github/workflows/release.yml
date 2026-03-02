@@ -118,13 +118,13 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Download VSCode extension
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: vscode-extension
           path: ./artifacts/vscode
 
       - name: Download Cursor extension
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: cursor-extension
           path: ./artifacts/cursor
